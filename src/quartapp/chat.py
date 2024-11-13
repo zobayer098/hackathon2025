@@ -3,7 +3,6 @@
 
 from typing import Any
 import azure.identity.aio
-
 from quart import Blueprint, jsonify, request, Response, render_template, current_app
 
 import asyncio
@@ -23,39 +22,58 @@ from azure.ai.projects.models import (
     AgentStreamEvent
 )
 
+from src.quartapp.config_helper import ConfigHelper
+
+config = ConfigHelper()
 
 bp = Blueprint("chat", __name__, template_folder="templates", static_folder="static")
 
 
 @bp.before_app_serving
 async def configure_assistant_client():
+    
+
     ai_client = AIProjectClient.from_connection_string(
-        credential=DefaultAzureCredential(                        exclude_shared_token_cache_credential=True),
+        credential=DefaultAzureCredential(                        
+                                          exclude_shared_token_cache_credential=True),
         conn_str=os.environ["PROJECT_CONNECTION_STRING"],
     )
+    
+    agent_id = config.get("Agent", "AGENT_ID")
+    
+    agent = None
+    
+    if agent_id:
+        try:
+            agent = await ai_client.agents.get_agent(agent_id)
+            print(f"Agent already exists, agent ID: {agent.id}")
+        except Exception as e:
+            print(f"Agent not found: {e}")
 
-    print(f"Current dir is {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', 'product_info_1.md'))}")
-    
-    # files = ["product_info_1.md", "product_info_2.md"]
-    # file_ids =[]
-    # for file in files:
-    #     file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file))
-    #     print(f"Uploading file {file_path}")
-    #     file_id = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
-    #     file_ids.append(file_id)
-    
-    # vector_store = await ai_client.agents.create_vector_store(file_ids=file_ids, name="sample_store")
+    if agent is None:  
+        files = ["product_info_1.md", "product_info_2.md"]
+        file_ids = []
+        for file in files:
+            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file))
+            print(f"Uploading file {file_path}")
+            file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
+            file_ids.append(file.id)
+        
+        vector_store = await ai_client.agents.create_vector_store(file_ids=file_ids, name="sample_store")
 
-    # file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
-    
-    tool_set = AsyncToolSet()
-    # tool_set.add(file_search_tool)
-    
-    agent = await ai_client.agents.create_agent(
-        model="gpt-4-1106-preview", name="my-assistant", instructions="You are helpful assistant", tools = tool_set.definitions, tool_resources=tool_set.resources
-    )
+        file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
+        
+        tool_set = AsyncToolSet()
+        tool_set.add(file_search_tool)
+        
+        agent = await ai_client.agents.create_agent(
+            model="gpt-4-1106-preview", name="my-assistant", instructions="You are helpful assistant", tools = tool_set.definitions, tool_resources=tool_set.resources
+        )
+        
+        print(f"Created agent, agent ID: {agent.id}")
 
-    print(f"Created agent, agent ID: {agent.id}")
+        config.set('Agent', 'AGENT_ID', agent.id)
+        config.save()
 
     
     bp.ai_client = ai_client
@@ -64,7 +82,6 @@ async def configure_assistant_client():
 
 @bp.after_app_serving
 async def shutdown_assistant_client():
-    await bp.ai_client.agents.delete_agent(bp.agent.id)
     await bp.ai_client.close()
 
 @bp.get("/")
