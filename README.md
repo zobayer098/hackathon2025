@@ -41,6 +41,22 @@ As a web application, it is designed to serve multiple users on multiple browser
 
 To achieve this, when users submit a message to the web server, the web server will create an agent, thread, and stream back a reply. The response contains `agent_id` and `thread_id` in cookies. As a result, each subsequent message sent to the web server will also contain these IDs. As long as the same agent is being used in the system and the thread can be retrieved in cookie, the same thread will be used to serve the users.
 
+## Local development
+
+1. Run `pip install -r requirements.txt`
+
+2. Make sure that the `.env` file exists.
+
+3. Store Azure AI Projects connection string in `.env` file as `PROJECT_CONNECTION_STRING`.
+4. Run `az login`
+
+5. Start the services with this command:
+
+    ```shell
+    python -m quart --app src.quartapp run --port 50505 --reload
+    ```
+
+6. Click 'http://localhost:50505' in the browser to run the application.
 
 ## Local development with Docker
 
@@ -50,7 +66,7 @@ This sample includes a `docker-compose.yaml` for local development which creates
 
 2. Make sure that the `.env` file exists.
 
-3. Store a keys and endpoint information (Azure) for the OpenAI resource in the `.env` file. The key should be stored in the `.env` file as `PROJECT_CONNECTION_STRING`. This is necessary because Docker containers don't have access to your user Azure credentials.
+3. Store Azure AI Projects connection string in `.env` file as `PROJECT_CONNECTION_STRING`.
 
 4. Start the services with this command:
 
