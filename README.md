@@ -15,6 +15,10 @@ sequenceDiagram
     participant WebServer
     participant APIServer
 
+    WebServer->>APIServer: upload_file_poll (post file API and poll by get)
+    APIServer-->>WebServer: return file
+    WebServer->>APIServer: create_vector_store_and_poll (post vector store API and poll by get)
+    APIServer-->>WebServer: return vector store
     WebServer->>APIServer: create_agent (post assistant API)
     APIServer-->>WebServer: return agent
 
