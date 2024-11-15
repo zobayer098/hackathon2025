@@ -63,7 +63,6 @@ To achieve this, when users submit a message to the web server, the web server w
 
 6. Click 'http://localhost:50505' in the browser to run the application.
 
-
 ## Example Run
 
 ![File-Search-screenshot](assets/FileSearchAgent.png)
