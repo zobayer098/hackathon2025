@@ -15,9 +15,9 @@ class ChatUI {
 
     preprocessContent(content) {
         // Regular expression to find citations like 【n:m†filename.md】
-        const citationRegex = /【(\d+):(\d+)†([^\s]+\.md)】/g;
-        return content.replace(citationRegex, (match, p1, p2, p3) => {
-            return `<a href="#" class="file-citation" data-file-name="${p3}">[${p1}:${p2}] ${p3}</a>`;
+        const citationRegex = /\u3010(\d+):(\d+)\u2020([^\s]+)\u3011/g;
+        return content.replace(citationRegex, (match, _, __, filename) => {
+            return `<a href="#" class="file-citation" data-file-name="${filename}">${match}</a>`;
         });
       }
 

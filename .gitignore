@@ -1,7 +1,6 @@
 __pycache__/
 
 # Environments
-config.ini
 .env
 .venv
 env/
@@ -9,3 +8,4 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.azure

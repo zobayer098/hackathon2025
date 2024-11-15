@@ -2,7 +2,6 @@
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 
 from typing import Any
-import azure.identity.aio
 from quart import Blueprint, jsonify, request, Response, render_template, current_app
 
 import asyncio
@@ -22,67 +21,62 @@ from azure.ai.projects.models import (
     AgentStreamEvent
 )
 
-from src.quartapp.config_helper import ConfigHelper
-
-config = ConfigHelper()
-
 bp = Blueprint("chat", __name__, template_folder="templates", static_folder="static")
 
 
 @bp.before_app_serving
-async def configure_assistant_client():
+async def start_server():
     
-
     ai_client = AIProjectClient.from_connection_string(
-        credential=DefaultAzureCredential(                        
-                                          exclude_shared_token_cache_credential=True),
+        credential=DefaultAzureCredential(exclude_shared_token_cache_credential=True),
         conn_str=os.environ["PROJECT_CONNECTION_STRING"],
     )
     
-    agent_id = config.get("Agent", "AGENT_ID")
+    # TODO: add more files are not supported for citation at the moment
+    files = ["product_info_1.md"]
+    file_ids = []
+    for file in files:
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file))
+        print(f"Uploading file {file_path}")
+        file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
+        file_ids.append(file.id)
     
-    agent = None
+    vector_store = await ai_client.agents.create_vector_store(file_ids=file_ids, name="sample_store")
+
+    file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
     
-    if agent_id:
-        try:
-            agent = await ai_client.agents.get_agent(agent_id)
-            print(f"Agent already exists, agent ID: {agent.id}")
-        except Exception as e:
-            print(f"Agent not found: {e}")
-
-    if agent is None:  
-        files = ["product_info_1.md", "product_info_2.md"]
-        file_ids = []
-        for file in files:
-            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file))
-            print(f"Uploading file {file_path}")
-            file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
-            file_ids.append(file.id)
-        
-        vector_store = await ai_client.agents.create_vector_store(file_ids=file_ids, name="sample_store")
-
-        file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
-        
-        tool_set = AsyncToolSet()
-        tool_set.add(file_search_tool)
-        
-        agent = await ai_client.agents.create_agent(
-            model="gpt-4-1106-preview", name="my-assistant", instructions="You are helpful assistant", tools = tool_set.definitions, tool_resources=tool_set.resources
-        )
-        
-        print(f"Created agent, agent ID: {agent.id}")
-
-        config.set('Agent', 'AGENT_ID', agent.id)
-        config.save()
-
+    tool_set = AsyncToolSet()
+    tool_set.add(file_search_tool)
     
+    print(f"ToolResource: {tool_set.resources}")
+        
+    agent = await ai_client.agents.create_agent(
+        model="gpt-4o-mini", name="my-assistant", instructions="You are helpful assistant", tools = tool_set.definitions, tool_resources=tool_set.resources
+    )
+    
+    print(f"Created agent, agent ID: {agent.id}")
+
     bp.ai_client = ai_client
     bp.agent = agent
+    bp.vector_store = vector_store
+    bp.file_ids = file_ids
         
 
 @bp.after_app_serving
-async def shutdown_assistant_client():
+async def stop_server():
+    for file_id in bp.file_ids:
+        await bp.ai_client.agents.delete_file(file_id)
+        print(f"Deleted file {file_id}")
+    
+    await bp.ai_client.agents.delete_vector_store(bp.vector_store.id)
+    print(f"Deleted vector store {bp.vector_store.id}")
+    
+    await bp.ai_client.agents.delete_agent(bp.agent.id)
+
+    print(f"Deleted agent {bp.agent.id}")        
+    
     await bp.ai_client.close()
+    print("Closed AIProjectClient")
 
 @bp.get("/")
 async def index():
@@ -160,10 +154,7 @@ async def chat():
 
 @bp.route('/fetch-document', methods=['GET'])
 async def fetch_document():
-    filename = request.args.get('filename')
-    current_app.logger.info(f"Fetching document: {filename}")
-    if not filename:
-        return jsonify({"error": "Filename is required"}), 400
+    filename = "product_info_1.md"
 
     # Get the file path from the mapping
     file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', filename))
