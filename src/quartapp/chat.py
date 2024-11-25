@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 
-from typing import Any
+from typing import Any, AsyncGenerator, Optional, Tuple
 from quart import Blueprint, jsonify, request, Response, render_template, current_app
 
 import asyncio
@@ -18,6 +18,9 @@ from azure.ai.projects.models import (
     FileSearchTool,
     AsyncToolSet,
     FilePurpose,
+    ThreadMessage,
+    ThreadError,
+    StreamEventData,
     AgentStreamEvent
 )
 
@@ -78,40 +81,44 @@ async def stop_server():
     await bp.ai_client.close()
     print("Closed AIProjectClient")
 
+async def yield_callback(event_type: str, event_obj: StreamEventData, **kwargs) -> Optional[str]:
+    accumulated_text = kwargs['accumulated_text']
+    if (isinstance(event_obj, MessageDeltaChunk)):
+        for content_part in event_obj.delta.content:
+            if isinstance(content_part, MessageDeltaTextContent):
+                text_value = content_part.text.value if content_part.text else "No text"
+                stream_data = json.dumps({'content': text_value, 'type': "message"})
+                accumulated_text[0] += text_value
+                return f"data: {stream_data}\n\n"
+    elif isinstance(event_obj, ThreadMessage):
+        if (event_obj.status == "completed"):
+            stream_data = json.dumps({'content': accumulated_text[0], 'type': "completed_message"})
+            return f"data: {stream_data}\n\n"
+    elif isinstance(event_obj, ThreadError):
+        print(f"An error occurred. Data: {event_obj.error}")
+        stream_data = json.dumps({'type': "stream_end"})
+        return f"data: {stream_data}\n\n"
+    elif event_type == AgentStreamEvent.DONE:
+        stream_data = json.dumps({'type': "stream_end"})
+        return f"data: {stream_data}\n\n"
+           
+    return None
 @bp.get("/")
 async def index():
     return await render_template("index.html")
 
-async def create_stream(thread_id: str, agent_id: str):
-    async with await bp.ai_client.agents.create_stream(
-        thread_id=thread_id, assistant_id=agent_id
-    ) as stream:
-        accumulated_text = ""
-        
-        async for event_type, event_data in stream:
-
-            stream_data = None 
-            if isinstance(event_data, MessageDeltaChunk):
-                for content_part in event_data.delta.content:
-                    if isinstance(content_part, MessageDeltaTextContent):
-                        text_value = content_part.text.value if content_part.text else "No text"
-                        accumulated_text += text_value
-                        print(f"Text delta received: {text_value}")
-                        stream_data = json.dumps({'content': text_value, 'type': "message"})
-
-            elif isinstance(event_data, ThreadMessage):
-                print(f"ThreadMessage created. ID: {event_data.id}, Status: {event_data.status}")
-                if (event_data.status == "completed"):
-                    stream_data = json.dumps({'content': accumulated_text, 'type': "completed_message"})
-
-            elif event_type == AgentStreamEvent.DONE:
-                print("Stream completed.")
-                stream_data = json.dumps({'type': "stream_end"})
-            
-            if stream_data:
-                yield f"data: {stream_data}\n\n"
-                
     
+
+async def get_result(thread_id: str, agent_id: str):
+    
+    accumulated_text = [""]
+    
+    async with await bp.ai_client.agents.create_stream(
+        thread_id=thread_id, assistant_id=agent_id,
+    ) as stream:
+        async for to_be_yield in stream.yield_until_done(yield_callback, accumulated_text=accumulated_text):
+            yield to_be_yield
+                
 @bp.route('/chat', methods=['POST'])
 async def chat():
     thread_id = request.cookies.get('thread_id')
@@ -147,7 +154,7 @@ async def chat():
         'Content-Type': 'text/event-stream'
     }
 
-    response = Response(create_stream(thread_id, agent_id), headers=headers)
+    response = Response(get_result(thread_id, agent_id), headers=headers)
     response.set_cookie('thread_id', thread_id)
     response.set_cookie('agent_id', agent_id)    
     return response
