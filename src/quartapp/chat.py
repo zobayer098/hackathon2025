@@ -83,13 +83,11 @@ async def stop_server():
 
 async def yield_callback(event_type: str, event_obj: StreamEventData, **kwargs) -> Optional[str]:
     accumulated_text = kwargs['accumulated_text']
-    if (isinstance(event_obj, MessageDeltaChunk)):
-        for content_part in event_obj.delta.content:
-            if isinstance(content_part, MessageDeltaTextContent):
-                text_value = content_part.text.value if content_part.text else "No text"
-                stream_data = json.dumps({'content': text_value, 'type': "message"})
-                accumulated_text[0] += text_value
-                return f"data: {stream_data}\n\n"
+    if (isinstance(event_obj, MessageDeltaTextContent)):
+        text_value = event_obj.text.value if event_obj.text else "No text"
+        stream_data = json.dumps({'content': text_value, 'type': "message"})
+        accumulated_text[0] += text_value
+        return f"data: {stream_data}\n\n"
     elif isinstance(event_obj, ThreadMessage):
         if (event_obj.status == "completed"):
             stream_data = json.dumps({'content': accumulated_text[0], 'type': "completed_message"})
