@@ -37,6 +37,7 @@ class ChatClient {
         let accumulatedContent = '';
         let isStreaming = true;
         let buffer = '';
+        let annotations = [];
     
         const reader = stream.getReader();
         const decoder = new TextDecoder();
@@ -73,12 +74,13 @@ class ChatClient {
                             if (data.type === "completed_message") {
                                 this.ui.clearAssistantMessage(messageDiv);
                                 accumulatedContent = data.content;
+                                annotations = data.annotations;
                                 isStreaming = false;
                             } else {
                                 accumulatedContent += data.content;
                             }
     
-                            this.ui.appendAssistantMessage(messageDiv, accumulatedContent, isStreaming);
+                            this.ui.appendAssistantMessage(messageDiv, accumulatedContent, isStreaming, annotations);
                         }
                     }
     

@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 
-from typing import Any, AsyncGenerator, Optional, Tuple
+from typing import AsyncGenerator, Dict, Optional, Tuple
 from quart import Blueprint, jsonify, request, Response, render_template, current_app
 
 import asyncio
@@ -12,19 +12,54 @@ from azure.ai.projects.aio import AIProjectClient
 from azure.identity import DefaultAzureCredential
 
 from azure.ai.projects.models import (
-    MessageDeltaTextContent,
     MessageDeltaChunk,
     ThreadMessage,
     FileSearchTool,
     AsyncToolSet,
     FilePurpose,
     ThreadMessage,
-    ThreadError,
     StreamEventData,
-    AgentStreamEvent
+    AsyncAgentEventHandler,
+    Agent,
+    VectorStore
 )
 
-bp = Blueprint("chat", __name__, template_folder="templates", static_folder="static")
+class ChatBlueprint(Blueprint):
+    ai_client: AIProjectClient
+    agent: Agent
+    files: Dict[str, str]
+    vector_store: VectorStore
+
+bp = ChatBlueprint("chat", __name__, template_folder="templates", static_folder="static")
+
+class MyEventHandler(AsyncAgentEventHandler[str]):
+
+    async def on_message_delta(
+        self, delta: "MessageDeltaChunk" 
+    ) -> Optional[str]:
+        stream_data = json.dumps({'content': delta.text, 'type': "message"})
+        return f"data: {stream_data}\n\n"
+
+    async def on_thread_message(
+        self, message: "ThreadMessage" 
+    ) -> Optional[str]:
+        if message.status == "completed":
+            annotations = [annotation.as_dict() for annotation in message.file_citation_annotations]
+            stream_data = json.dumps({'content': message.text_messages[0].text.value, 'annotations': annotations, 'type': "completed_message"})
+            return f"data: {stream_data}\n\n"
+        return None
+
+    async def on_error(self, data: str) -> Optional[str]:
+        print(f"An error occurred. Data: {data}")
+        stream_data = json.dumps({'type': "stream_end"})
+        return f"data: {stream_data}\n\n"
+
+    async def on_done(
+        self,
+    ) -> Optional[str]:
+        stream_data = json.dumps({'type': "stream_end"})
+        return f"data: {stream_data}\n\n"
+
 
 
 @bp.before_app_serving
@@ -36,15 +71,15 @@ async def start_server():
     )
     
     # TODO: add more files are not supported for citation at the moment
-    files = ["product_info_1.md"]
-    file_ids = []
-    for file in files:
-        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file))
+    file_names = ["product_info_1.md", "product_info_2.md"]
+    files: Dict[str, str] = {}
+    for file_name in file_names:
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file_name))
         print(f"Uploading file {file_path}")
         file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
-        file_ids.append(file.id)
+        files.update({file.id: file_path})
     
-    vector_store = await ai_client.agents.create_vector_store(file_ids=file_ids, name="sample_store")
+    vector_store = await ai_client.agents.create_vector_store_and_poll(file_ids=list(files.keys()), name="sample_store")
 
     file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
     
@@ -62,12 +97,12 @@ async def start_server():
     bp.ai_client = ai_client
     bp.agent = agent
     bp.vector_store = vector_store
-    bp.file_ids = file_ids
+    bp.files = files
         
 
 @bp.after_app_serving
 async def stop_server():
-    for file_id in bp.file_ids:
+    for file_id in bp.files.keys():
         await bp.ai_client.agents.delete_file(file_id)
         print(f"Deleted file {file_id}")
     
@@ -81,41 +116,23 @@ async def stop_server():
     await bp.ai_client.close()
     print("Closed AIProjectClient")
 
-async def yield_callback(event_type: str, event_obj: StreamEventData, **kwargs) -> Optional[str]:
-    accumulated_text = kwargs['accumulated_text']
-    if (isinstance(event_obj, MessageDeltaTextContent)):
-        text_value = event_obj.text.value if event_obj.text else "No text"
-        stream_data = json.dumps({'content': text_value, 'type': "message"})
-        accumulated_text[0] += text_value
-        return f"data: {stream_data}\n\n"
-    elif isinstance(event_obj, ThreadMessage):
-        if (event_obj.status == "completed"):
-            stream_data = json.dumps({'content': accumulated_text[0], 'type': "completed_message"})
-            return f"data: {stream_data}\n\n"
-    elif isinstance(event_obj, ThreadError):
-        print(f"An error occurred. Data: {event_obj.error}")
-        stream_data = json.dumps({'type': "stream_end"})
-        return f"data: {stream_data}\n\n"
-    elif event_type == AgentStreamEvent.DONE:
-        stream_data = json.dumps({'type': "stream_end"})
-        return f"data: {stream_data}\n\n"
-           
-    return None
+
+
+
 @bp.get("/")
 async def index():
     return await render_template("index.html")
 
     
 
-async def get_result(thread_id: str, agent_id: str):
-    
-    accumulated_text = [""]
-    
+async def get_result(thread_id: str, agent_id: str) -> AsyncGenerator[str, None]:
     async with await bp.ai_client.agents.create_stream(
         thread_id=thread_id, assistant_id=agent_id,
+        event_handler=MyEventHandler()
     ) as stream:
-        async for to_be_yield in stream.yield_until_done(yield_callback, accumulated_text=accumulated_text):
-            yield to_be_yield
+        async for _, _, to_be_yield in stream:
+            if to_be_yield:
+                yield to_be_yield
                 
 @bp.route('/chat', methods=['POST'])
 async def chat():
@@ -123,7 +140,7 @@ async def chat():
     agent_id = request.cookies.get('agent_id')
     thread = None
     
-    if thread_id or agent_id != bp.agent.id:
+    if thread_id and agent_id == bp.agent.id:
         # Check if the thread is still active
         try:
             thread = await bp.ai_client.agents.get_thread(thread_id)
@@ -159,17 +176,14 @@ async def chat():
 
 @bp.route('/fetch-document', methods=['GET'])
 async def fetch_document():
-    filename = "product_info_1.md"
-
-    # Get the file path from the mapping
-    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', filename))
-    
-    if not os.path.exists(file_path):
-        return jsonify({"error": f"File not found: {filename}"}), 404
+    file_id = request.args.get('file_id')
+    current_app.logger.info(f"Fetching document: {file_id}")
+    if not file_id:
+        return jsonify({"error": "file_id is required"}), 400
 
     try:
         # Read the file content asynchronously using asyncio.to_thread
-        data = await asyncio.to_thread(read_file, file_path)
+        data = await asyncio.to_thread(read_file, bp.files[file_id])
         return Response(data, content_type='text/plain')
 
     except Exception as e:
