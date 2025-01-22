@@ -171,5 +171,5 @@ wsproto==1.2.0
     # via hypercorn
 yarl==1.9.4
     # via aiohttp
-azure-ai-projects==1.0.0b4
+azure-ai-projects==1.0.0b5
     # via quartapp (pyproject.toml)
