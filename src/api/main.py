@@ -102,8 +102,9 @@ def create_app():
         logger.info("Loading .env file")
         load_dotenv(override=True)
 
+    directory = os.path.join(os.path.dirname(__file__), "static")
     app = fastapi.FastAPI(lifespan=lifespan)
-    app.mount("/static", StaticFiles(directory="api/static"), name="static")
+    app.mount("/static", StaticFiles(directory=directory), name="static")
 
     from . import routes  # noqa
 

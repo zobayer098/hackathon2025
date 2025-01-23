@@ -26,7 +26,8 @@ from .shared import bp
 
 
 router = fastapi.APIRouter()
-templates = Jinja2Templates(directory="api/templates")
+directory = os.path.join(os.path.dirname(__file__), "templates")
+templates = Jinja2Templates(directory=directory)
 
 
 
