@@ -13,27 +13,31 @@ class ChatUI {
         this.attachCloseButtonListener();
     }
 
-    preprocessContent(content) {
-        // Regular expression to find citations like 【n:m†filename.md】
-        const citationRegex = /\u3010(\d+):(\d+)\u2020([^\s]+)\u3011/g;
-        return content.replace(citationRegex, (match, _, __, filename) => {
-            return `<a href="#" class="file-citation" data-file-name="${filename}">${match}</a>`;
-        });
+    preprocessContent(content, annotations) {
+        if (annotations) {  
+            annotations.slice().reverse().forEach(annotation => {
+                // the start and end index are the label of annotation. Replace them with a link
+                content = content.slice(0, annotation.start_index) +
+                `<a href="#" class="file-citation" data-file-id="${annotation.file_citation.file_id}">${annotation.text}</a>` +
+                content.slice(annotation.end_index);
+            });
+        }
+        return content;
       }
 
     addCitationClickListener() {
         document.addEventListener('click', (event) => {
             if (event.target.classList.contains('file-citation')) {
                 event.preventDefault();
-                const filename = event.target.getAttribute('data-file-name');
-                this.loadDocument(filename);
+                const file_id = event.target.getAttribute('data-file-id');
+                this.loadDocument(file_id);
             }
         });
     }
 
-    async loadDocument(filename) {
+    async loadDocument(file_id) {
         try {
-            const response = await fetch(`/fetch-document?filename=${filename}`);
+            const response = await fetch(`/fetch-document?file_id=${file_id}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -53,7 +57,6 @@ class ChatUI {
     }
 
     showDocument(content) {
-        console.log("showDocument:", content);
         const docViewerSection = document.getElementById("document-viewer-section");
         const chatColumn = document.getElementById("chat-container");
 
@@ -109,8 +112,7 @@ class ChatUI {
         this.scrollToBottom();
     }
 
-    appendAssistantMessage(messageDiv, accumulatedContent, isStreaming) {
-        //console.log("Accumulated Content before conversion:", accumulatedContent);    
+    appendAssistantMessage(messageDiv, accumulatedContent, isStreaming, annotations) {
         const md = window.markdownit({
             html: true,
             linkify: true,
@@ -120,7 +122,7 @@ class ChatUI {
     
         try {
             // Preprocess content to convert citations to links
-            const preprocessedContent = this.preprocessContent(accumulatedContent);
+            const preprocessedContent = this.preprocessContent(accumulatedContent, annotations);
             // Convert the accumulated content to HTML using markdown-it
             let htmlContent = md.render(preprocessedContent);
             const messageTextDiv = messageDiv.querySelector(".message-text");
@@ -130,13 +132,10 @@ class ChatUI {
     
             // Set the innerHTML of the message text div to the HTML content
             messageTextDiv.innerHTML = htmlContent;
-            console.log("HTML set to messageTextDiv:", messageTextDiv.innerHTML);
             
             // Use requestAnimationFrame to ensure the DOM has updated before scrolling
             // Only scroll if not streaming
             if (!isStreaming) {
-                console.log("Accumulated content:", accumulatedContent);
-                console.log("HTML set to messageTextDiv:", messageTextDiv.innerHTML);
                 requestAnimationFrame(() => {
                     this.scrollToBottom();
                 });

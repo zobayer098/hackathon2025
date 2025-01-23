@@ -47,7 +47,7 @@ To achieve this, when users submit a message to the web server, the web server w
 
 ## Local Development
 
-1. Run `pip install -r requirements.txt`.
+1. Run `pip install -r ./src/requirements.txt`.
 
 2. Make sure that the `.env` file exists.
 
