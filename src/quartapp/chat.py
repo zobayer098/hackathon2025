@@ -130,9 +130,10 @@ async def get_result(thread_id: str, agent_id: str) -> AsyncGenerator[str, None]
         thread_id=thread_id, assistant_id=agent_id,
         event_handler=MyEventHandler()
     ) as stream:
-        async for _, _, to_be_yield in stream:
-            if to_be_yield:
-                yield to_be_yield
+        # Iterate over the steam to trigger event functions
+        async for _, _, event_func_return_val in stream:
+            if event_func_return_val:
+                yield event_func_return_val
                 
 @bp.route('/chat', methods=['POST'])
 async def chat():
