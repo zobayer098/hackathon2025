@@ -43,7 +43,7 @@ async def lifespan(app: fastapi.FastAPI):
 
     ai_client = AIProjectClient.from_connection_string(
         credential=DefaultAzureCredential(exclude_shared_token_cache_credential=True),
-        conn_str=os.environ["PROJECT_CONNECTION_STRING"],
+        conn_str=os.environ["AZURE_AIPROJECT_CONNECTION_STRING"],
     )
     
     # TODO: add more files are not supported for citation at the moment

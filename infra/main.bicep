@@ -54,8 +54,8 @@ param applicationInsightsName string = ''
 param aiServicesName string = ''
 @description('The AI Services connection name. If ommited will use a default value')
 param aiServicesConnectionName string = ''
-@description('The AI Services content safety connection name. If ommited will use a default value')
-param aiServicesContentSafetyConnectionName string = ''
+// @description('The AI Services content safety connection name. If ommited will use a default value')
+// param aiServicesContentSafetyConnectionName string = ''
 @description('The Azure Container Registry resource name. If ommited will be generated')
 param containerRegistryName string = ''
 @description('The Azure Key Vault resource name. If ommited will be generated')
@@ -188,9 +188,9 @@ module ai 'core/host/ai-environment.bicep' = if (empty(aiExistingProjectConnecti
       : '${abbrs.storageStorageAccounts}${resourceToken}'
     aiServicesName: !empty(aiServicesName) ? aiServicesName : 'aoai-${resourceToken}'
     aiServicesConnectionName: !empty(aiServicesConnectionName) ? aiServicesConnectionName : 'aoai-${resourceToken}'
-    aiServicesContentSafetyConnectionName: !empty(aiServicesContentSafetyConnectionName)
-      ? aiServicesContentSafetyConnectionName
-      : 'aoai-content-safety-connection'
+    // aiServicesContentSafetyConnectionName: !empty(aiServicesContentSafetyConnectionName)
+    //   ? aiServicesContentSafetyConnectionName
+    //   : 'aoai-content-safety-connection'
     aiServiceModelDeployments: aiDeployments
     logAnalyticsName: logAnalyticsWorkspaceResolvedName
     applicationInsightsName: !useApplicationInsights

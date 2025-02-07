@@ -1,19 +1,32 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-
-name: azure-ai-projects-file-search
-metadata:
-    template: azd-init@1.11.1
-services:
-    src:
-        project: src
-        host: containerapp
-        language: python
-        docker:
-            path: Dockerfile
-
 # TODO: do we need hooks? 
+# TODO: do we need all of the variables?
 
-# TODO: do we need all of these?
+name: azd-aistudio-starter
+metadata:
+  template: azd-aistudio-starter@0.0.1-beta
+
+services:
+  api:
+    project: ./src
+    language: py
+    host: containerapp
+    docker:
+      remoteBuild: true
+
+hooks:
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/write_env.ps1
+      continueOnError: true
+      interactive: true
+    posix:
+      shell: sh
+      run: ./scripts/write_env.sh
+      continueOnError: true
+      interactive: true
+
 pipeline:
   variables:
     - AZURE_RESOURCE_GROUP

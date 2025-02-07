@@ -16,8 +16,8 @@ param aiServicesName string
 param aiServicesConnectionName string
 @description('The AI Services model deployments.')
 param aiServiceModelDeployments array = []
-@description('The AI Services content safety connection name.')
-param aiServicesContentSafetyConnectionName string
+// @description('The AI Services content safety connection name.')
+// param aiServicesContentSafetyConnectionName string
 @description('The Log Analytics resource name.')
 param logAnalyticsName string = ''
 @description('The Application Insights resource name.')
@@ -59,7 +59,7 @@ module hub '../ai/hub.bicep' = {
     applicationInsightsId: hubDependencies.outputs.applicationInsightsId
     aiServicesName: hubDependencies.outputs.aiServicesName
     aiServicesConnectionName: aiServicesConnectionName
-    aiServicesContentSafetyConnectionName: aiServicesContentSafetyConnectionName
+  //   aiServicesContentSafetyConnectionName: aiServicesContentSafetyConnectionName
     aiSearchName: hubDependencies.outputs.searchServiceName
     aiSearchConnectionName: searchConnectionName
   }
