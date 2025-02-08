@@ -47,6 +47,7 @@ async def lifespan(app: fastapi.FastAPI):
     )
     
     # TODO: add more files are not supported for citation at the moment
+    """
     file_names = ["product_info_1.md", "product_info_2.md"]
     files: Dict[str, str] = {}
     for file_name in file_names:
@@ -63,7 +64,7 @@ async def lifespan(app: fastapi.FastAPI):
     tool_set.add(file_search_tool)
     
     print(f"ToolResource: {tool_set.resources}")
-        
+    """    
     agent = await ai_client.agents.create_agent(
         model="gpt-4o-mini", name="my-assistant", instructions="You are helpful assistant", tools = tool_set.definitions, tool_resources=tool_set.resources
     )
@@ -72,8 +73,8 @@ async def lifespan(app: fastapi.FastAPI):
 
     bp.ai_client = ai_client
     bp.agent = agent
-    bp.vector_store = vector_store
-    bp.files = files
+    #bp.vector_store = vector_store
+    #bp.files = files
     
     yield
 
@@ -85,8 +86,8 @@ async def stop_server():
         await bp.ai_client.agents.delete_file(file_id)
         print(f"Deleted file {file_id}")
     
-    await bp.ai_client.agents.delete_vector_store(bp.vector_store.id)
-    print(f"Deleted vector store {bp.vector_store.id}")
+    #await bp.ai_client.agents.delete_vector_store(bp.vector_store.id)
+    #print(f"Deleted vector store {bp.vector_store.id}")
     
     await bp.ai_client.agents.delete_agent(bp.agent.id)
 

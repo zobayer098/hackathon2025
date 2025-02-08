@@ -31,46 +31,45 @@ class ChatClient {
             console.error('Fetch failed:', error);
         }
 }
-    
+
     handleMessages(stream) {
         let messageDiv = null;
         let accumulatedContent = '';
         let isStreaming = true;
         let buffer = '';
         let annotations = [];
-    
+
         const reader = stream.getReader();
         const decoder = new TextDecoder();
-    
+
         const readStream = async () => {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
-                    break;
+                    break; // The stream finished normally.
                 }
-    
+
                 buffer += decoder.decode(value, { stream: true });
-    
                 let boundary = buffer.indexOf('\n');
+                
+
                 while (boundary !== -1) {
                     const chunk = buffer.slice(0, boundary).trim();
                     buffer = buffer.slice(boundary + 1);
-    
+
                     if (chunk.startsWith('data: ')) {
                         const data = JSON.parse(chunk.slice(6));
-    
+
                         if (data.type === "stream_end") {
-                            reader.releaseLock();
+                            // Just break out of the loop, no releaseLock().
                             messageDiv = null;
                             accumulatedContent = '';
+                            break;
                         } else {
                             if (!messageDiv) {
                                 messageDiv = this.ui.createAssistantMessageDiv();
-                                if (!messageDiv) {
-                                    console.error("Failed to create message div.");
-                                }
                             }
-    
+                            
                             if (data.type === "completed_message") {
                                 this.ui.clearAssistantMessage(messageDiv);
                                 accumulatedContent = data.content;
@@ -79,19 +78,26 @@ class ChatClient {
                             } else {
                                 accumulatedContent += data.content;
                             }
-    
-                            this.ui.appendAssistantMessage(messageDiv, accumulatedContent, isStreaming, annotations);
+
+                            this.ui.appendAssistantMessage(
+                                messageDiv,
+                                accumulatedContent,
+                                isStreaming,
+                                annotations
+                            );
                         }
                     }
-    
+
                     boundary = buffer.indexOf('\n');
                 }
             }
         };
-    
-        readStream().catch(error => {
-            console.error('Stream reading failed:', error);
-        });
+
+        // Ensure errors surface nicely:
+        readStream()
+            .catch(error => {
+                console.error('Stream reading failed:', error);
+            });
     }
 
 }
