@@ -14,30 +14,42 @@ class ChatUI {
     }
 
     preprocessContent(content, annotations) {
-        if (annotations) {  
+        if (annotations) {
+            // Process annotations in reverse order so that the indexes remain valid 
             annotations.slice().reverse().forEach(annotation => {
-                // the start and end index are the label of annotation. Replace them with a link
+                // If there's a file_name, show it (wrapped in brackets), otherwise fall back to annotation.text.
+                let linkText = annotation.file_name 
+                    ? `[${annotation.file_name}]`
+                    : annotation.text;
+    
+                // Use file_name in the data attribute.
+                const dataAttr = `data-file-name="${annotation.file_name}"`;
+    
                 content = content.slice(0, annotation.start_index) +
-                `<a href="#" class="file-citation" data-file-id="${annotation.file_citation.file_id}">${annotation.text}</a>` +
-                content.slice(annotation.end_index);
+                    `<a href="#" class="file-citation" ${dataAttr}>${linkText}</a>` +
+                    content.slice(annotation.end_index);
             });
         }
         return content;
-      }
+    } 
 
     addCitationClickListener() {
         document.addEventListener('click', (event) => {
             if (event.target.classList.contains('file-citation')) {
                 event.preventDefault();
-                const file_id = event.target.getAttribute('data-file-id');
-                this.loadDocument(file_id);
+                // Retrieve the file name from the data attribute.
+                const fileIdentifier = event.target.getAttribute('data-file-name');
+                if (fileIdentifier) {
+                    this.loadDocument(fileIdentifier);
+                }
             }
         });
     }
 
-    async loadDocument(file_id) {
+    async loadDocument(fileIdentifier) {
         try {
-            const response = await fetch(`/fetch-document?file_id=${file_id}`);
+            // Backend now expects file_name as the query parameter.
+            const response = await fetch(`/fetch-document?file_name=${encodeURIComponent(fileIdentifier)}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -121,7 +133,7 @@ class ChatUI {
         });
     
         try {
-            // Preprocess content to convert citations to links
+            // Preprocess content to convert citations to links using the updated annotation data
             const preprocessedContent = this.preprocessContent(accumulatedContent, annotations);
             // Convert the accumulated content to HTML using markdown-it
             let htmlContent = md.render(preprocessedContent);
