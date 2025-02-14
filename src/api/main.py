@@ -54,7 +54,7 @@ async def lifespan(app: fastapi.FastAPI):
         )
         logger.info("Created AIProjectClient")
 
-        file_names = ["product_info_1.md", "product_info_2.md"]
+        file_names = ["product_info_1.md", "product_info_2.md"] #TODO: can we get the file names from the folder so customers can upload? 
         for file_name in file_names:
             file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file_name))
             file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
@@ -73,12 +73,14 @@ async def lifespan(app: fastapi.FastAPI):
         toolset.add(file_search_tool)
 
         agent = await ai_client.agents.create_agent(
-            model="gpt-4o-mini", 
+            model=os.environ["AZURE_AI_CHAT_DEPLOYMENT_NAME"],
             name="my-assistant", 
             instructions="You are helpful assistant",
             toolset=toolset
         )
         logger.info(f"Created agent, agent ID: {agent.id}")
+        logger.info(f"Created agent, model name: {agent.model}")
+
     except Exception as e:
         logger.error(f"Error creating agent: {e}", exc_info=True)
         raise RuntimeError(f"Failed to create the agent: {e}")
