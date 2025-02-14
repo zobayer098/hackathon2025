@@ -137,7 +137,7 @@ You can optionally use a local development server to test app changes locally. M
     python -m uvicorn "api.main:create_app" --factory --reload
     ```
 
-5. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser.
+5. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser. It may take a few moments for application startup to complete. 
 
 6. Enter your message in the box.
 
