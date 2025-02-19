@@ -276,6 +276,19 @@ module backendRoleAzureAIDeveloperRG 'core/security/role.bicep' = {
   }
 }
 
+var resolvedApplicationInsightsName = !useApplicationInsights || !empty(aiExistingProjectConnectionString)
+  ? ''
+  : !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+
+module monitoringMetricsContribuitorRoleAzureAIDeveloperRG 'core/security/appinsights-access.bicep' = if (!empty(resolvedApplicationInsightsName)) {
+  name: 'monitoringmetricscontributor-role-azureai-developer-rg'
+  scope: rg
+  params: {
+    appInsightsName: resolvedApplicationInsightsName
+    principalId: api.outputs.SERVICE_API_IDENTITY_PRINCIPAL_ID
+  }
+}
+
 resource existingProjectRG 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(aiExistingProjectConnectionString)) {
   name: split(aiExistingProjectConnectionString, ';')[2]
 }
