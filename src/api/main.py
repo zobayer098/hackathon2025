@@ -28,14 +28,31 @@ stream_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(me
 stream_handler.setFormatter(stream_formatter)
 logger.addHandler(stream_handler)
 
-# Configure the file handler
-log_file_path = os.getenv("APP_LOG_FILE", "app.log")
-file_handler = logging.FileHandler(log_file_path)
-file_handler.setLevel(logging.INFO)
-file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
+# Configure logging to file, if log file name is provided
+log_file_name = os.getenv("APP_LOG_FILE")
+if log_file_name is not None:
+    file_handler = logging.FileHandler(log_file_name)
+    file_handler.setLevel(logging.INFO)
+    file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
 
+enable_trace_string = os.getenv("ENABLE_AZURE_MONITOR_TRACING")
+enable_trace = False
+if enable_trace_string is None:
+    enable_trace = False
+else:
+    enable_trace = str(enable_trace_string).lower() == "true"
+if enable_trace:
+    logger.info("Tracing is enabled.")
+    try:
+        from azure.monitor.opentelemetry import configure_azure_monitor
+    except ModuleNotFoundError:
+        logger.error("Required libraries for tracing not installed.")
+        logger.error("Please make sure azure-monitor-opentelemetry is installed.")
+        exit()
+else:
+    logger.info("Tracing is not enabled")
 
 @contextlib.asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
@@ -53,6 +70,20 @@ async def lifespan(app: fastapi.FastAPI):
             conn_str=os.environ["AZURE_AIPROJECT_CONNECTION_STRING"],
         )
         logger.info("Created AIProjectClient")
+
+        if enable_trace:
+            application_insights_connection_string = ""
+            try:
+                application_insights_connection_string = await ai_client.telemetry.get_connection_string()
+            except Exception as e:
+                e_string = str(e)
+                logger.error("Failed to get Application Insights connection string, error: %s", e_string)
+            if not application_insights_connection_string:
+                logger.error("Application Insights was not enabled for this project.")
+                logger.error("Enable it via the 'Tracing' tab in your AI Foundry project page.")
+                exit()
+            else:
+                configure_azure_monitor(connection_string=application_insights_connection_string)
 
         file_names = ["product_info_1.md", "product_info_2.md"] #TODO: can we get the file names from the folder so customers can upload? 
         for file_name in file_names:
