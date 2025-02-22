@@ -59,6 +59,7 @@ async def lifespan(app: fastapi.FastAPI):
     files: Dict[str, Dict[str, str]] = {}  # File name -> {"id": file_id, "path": file_path}
     vector_store = None
     agent = None
+    create_new_agent = True
 
     try:
         if not os.getenv("RUNNING_IN_PRODUCTION"):
@@ -85,32 +86,45 @@ async def lifespan(app: fastapi.FastAPI):
             else:
                 configure_azure_monitor(connection_string=application_insights_connection_string)
 
-        file_names = ["product_info_1.md", "product_info_2.md"] #TODO: can we get the file names from the folder so customers can upload? 
-        for file_name in file_names:
-            file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file_name))
-            file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
-            logger.info(f"Uploaded file {file_path}, file ID: {file.id}")
-            # Store both file id and the file path using the file name as key.
-            files[file_name] = {"id": file.id, "path": file_path}
+        if os.environ.get("AZURE_AI_AGENT_ID") is not None:
+            try: 
+                agent = await ai_client.agents.get_agent(os.environ["AZURE_AI_AGENT_ID"])
+                create_new_agent = False
+                logger.info("Agent already exists, skipping creation")
+                logger.info(f"Fetched agent, agent ID: {agent.id}")
+                logger.info(f"Fetched agent, model name: {agent.model}")
+            except Exception as e:
+                logger.error(f"Error fetching agent: {e}", exc_info=True)
+                create_new_agent = True
+        if create_new_agent:
+            logger.info("Creating agent")
+            file_names = ["product_info_1.md", "product_info_2.md"]
+            for file_name in file_names:
+                file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file_name))
+                file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
+                logger.info(f"Uploaded file {file_path}, file ID: {file.id}")
+                # Store both file id and the file path using the file name as key.
+                files[file_name] = {"id": file.id, "path": file_path}
+            
+            # Create the vector store using the file IDs.
+            vector_store = await ai_client.agents.create_vector_store_and_poll(
+                file_ids=[info["id"] for info in files.values()],
+                name="sample_store"
+            )
+
+            file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
+            toolset = AsyncToolSet()
+            toolset.add(file_search_tool)
+
+            agent = await ai_client.agents.create_agent(
+                model=os.environ["AZURE_AI_CHAT_DEPLOYMENT_NAME"],
+                name="my-assistant", 
+                instructions="You are helpful assistant",
+                toolset=toolset
+            )
         
-        # Create the vector store using the file IDs.
-        vector_store = await ai_client.agents.create_vector_store_and_poll(
-            file_ids=[info["id"] for info in files.values()],
-            name="sample_store"
-        )
-
-        file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
-        toolset = AsyncToolSet()
-        toolset.add(file_search_tool)
-
-        agent = await ai_client.agents.create_agent(
-            model=os.environ["AZURE_AI_CHAT_DEPLOYMENT_NAME"],
-            name="my-assistant", 
-            instructions="You are helpful assistant",
-            toolset=toolset
-        )
-        logger.info(f"Created agent, agent ID: {agent.id}")
-        logger.info(f"Created agent, model name: {agent.model}")
+            logger.info(f"Created agent, agent ID: {agent.id}")
+            logger.info(f"Created agent, model name: {agent.model}")
 
     except Exception as e:
         logger.error(f"Error creating agent: {e}", exc_info=True)
@@ -124,20 +138,21 @@ async def lifespan(app: fastapi.FastAPI):
         yield
     finally:
         # Cleanup on shutdown.
-        try:
-            for info in files.values():
-                await ai_client.agents.delete_file(info["id"])
-                logger.info(f"Deleted file {info['id']}")
-            
-            if vector_store:
-                await ai_client.agents.delete_vector_store(vector_store.id)
-                logger.info(f"Deleted vector store {vector_store.id}")
+        if create_new_agent:
+            try:
+                for info in files.values():
+                    await ai_client.agents.delete_file(info["id"])
+                    logger.info(f"Deleted file {info['id']}")
+                
+                if vector_store:
+                    await ai_client.agents.delete_vector_store(vector_store.id)
+                    logger.info(f"Deleted vector store {vector_store.id}")
 
-            if agent:
-                await ai_client.agents.delete_agent(agent.id)
-                logger.info(f"Deleted agent {agent.id}")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}", exc_info=True)
+                if agent:
+                    await ai_client.agents.delete_agent(agent.id)
+                    logger.info(f"Deleted agent {agent.id}")
+            except Exception as e:
+                logger.error(f"Error during cleanup: {e}", exc_info=True)
 
         try:
             await ai_client.close()

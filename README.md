@@ -43,6 +43,36 @@ You can find the connection string on the overview page of your Azure AI project
 
 This solution has been configured to use "gpt-4o-mini" model. If you do not have a deployment named "gpt-4o-mini" in your existing AI project, you should either create one in Azure AI Foundry or follow the steps in [Customizing model deployments](#customizing-model-deployments) to specify a different model.
 
+#### Creating and Importing an Agent
+
+You can create an agent in your project to import to this template. For more information on creating an agent, view [Quickstart: Create a New Agent](https://learn.microsoft.com/azure/ai-services/agents/quickstart?pivots=ai-foundry). There are three agent creation options:
+
+<details>
+  <summary><b>Azure AI Foundry Agents Playground</b></summary> 
+
+In [Azure AI Foundry](https://ai.azure.com/), navigate to the Agents Playground for your project. Here, you can create an agent and customize its name, model deployment, instructions, and tools, as well as upload files for file search. 
+</details>
+
+<details>
+  <summary><b>SDK Samples</b></summary> 
+
+You can create an agent using the Azure AI Projects SDK. By following the [instructions to create an agent using Python](https://learn.microsoft.com/azure/ai-services/agents/quickstart?pivots=programming-language-python-azure), you can create an agent using code based on the SDK samples. 
+
+</details>
+
+<details>
+  <summary><b>Assistants Tool</b></summary>
+
+Using the [Azure AI Assistants Tool](https://github.com/Azure-Samples/azureai-assistant-tool), you can create an agent and customize it with tools and functions. Then, you can export the agent and use the agent_id.  
+<!-- TODO: do we need to implement agents.yaml changes in order to use this solution? -->
+</details>
+
+After creating your agent, import the agent into this template by copying the agent_id and setting the following environment variable:
+
+```shell
+azd env set AZURE_AI_AGENT_ID "<agent_id>"
+```
+
 
 ## Development
 
