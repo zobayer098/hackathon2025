@@ -29,17 +29,17 @@ stream_handler.setFormatter(stream_formatter)
 logger.addHandler(stream_handler)
 
 # Configure logging to file, if log file name is provided
-log_file_name = os.getenv("APP_LOG_FILE")
-if log_file_name is not None:
+log_file_name = os.getenv("APP_LOG_FILE", "")
+if log_file_name != "":
     file_handler = logging.FileHandler(log_file_name)
     file_handler.setLevel(logging.INFO)
     file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
-enable_trace_string = os.getenv("ENABLE_AZURE_MONITOR_TRACING")
+enable_trace_string = os.getenv("ENABLE_AZURE_MONITOR_TRACING", "")
 enable_trace = False
-if enable_trace_string is None:
+if enable_trace_string != "":
     enable_trace = False
 else:
     enable_trace = str(enable_trace_string).lower() == "true"
