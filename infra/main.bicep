@@ -102,9 +102,9 @@ param embedModelFormat string
 @description('Name of the embedding model to deploy')
 param embedModelName string
 @description('Name of the embedding model deployment')
-param embedDeploymentName string
+param embeddingDeploymentName string
 @description('Embedding model dimensionality')
-param embedDeploymentDimensions string
+param embeddingDeploymentDimensions string
 
 @description('Version of the embedding model to deploy')
 // See version availability in this table:
@@ -144,7 +144,7 @@ var aiDeployments = [
     }
   }
   {
-    name: embedDeploymentName
+    name: embeddingDeploymentName
     model: {
       format: embedModelFormat
       name: embedModelName
@@ -207,6 +207,10 @@ module ai 'core/host/ai-environment.bicep' = if (empty(aiExistingProjectConnecti
       : !empty(searchConnectionName) ? searchConnectionName : 'search-service-connection'
   }
 }
+
+var searchServiceEndpoint = !useSearchService
+  ? ''
+  : ai.outputs.searchServiceEndpoint
 
 // If bringing an existing AI project, set up the log analytics workspace here
 module logAnalytics 'core/monitor/loganalytics.bicep' = if (!empty(aiExistingProjectConnectionString)) {
@@ -285,6 +289,8 @@ module api 'api.bicep' = {
     searchConnectionName: searchConnectionName
     aiSearchIndexName: aiSearchIndexName
     searchServiceEndpoint: searchServiceEndpoint
+    embeddingDeploymentName: embeddingDeploymentName
+    embeddingDeploymentDimensions: embeddingDeploymentDimensions
     exists: apiAppExists
   }
 }
@@ -378,10 +384,10 @@ output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_AIPROJECT_CONNECTION_STRING string = projectConnectionString
 output AZURE_AI_AGENT_DEPLOYMENT_NAME string = agentDeploymentName
 output AZURE_AI_SEARCH_CONNECTION_NAME string = searchConnectionName
-output AZURE_AI_EMBED_DEPLOYMENT_NAME string = embedDeploymentName
+output AZURE_AI_EMBED_DEPLOYMENT_NAME string = embeddingDeploymentName
 output AZURE_AI_SEARCH_INDEX_NAME string = aiSearchIndexName
 output AZURE_AI_SEARCH_ENDPOINT string = searchServiceEndpoint
-output AZURE_AI_EMBED_DIMENSIONS string = embedDeploymentDimensions
+output AZURE_AI_EMBED_DIMENSIONS string = embeddingDeploymentDimensions
 
 // Outputs required by azd for ACA
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerApps.outputs.environmentName

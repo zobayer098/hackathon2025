@@ -68,7 +68,7 @@
     "agentDeploymentCapacity": {
       "value": "${AZURE_AI_AGENT_DEPLOYMENT_CAPACITY=50}"
     },
-    "embedDeploymentName": {
+    "embeddingDeploymentName": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_NAME=text-embedding-3-small}"
     },
     "embedModelFormat": {
@@ -86,7 +86,7 @@
     "embedDeploymentCapacity": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_CAPACITY=50}"
     },
-    "embedDeploymentDimensions": {
+    "embeddingDeploymentDimensions": {
       "value": "${AZURE_AI_EMBED_DIMENSIONS=100}"
     },
     "apiAppExists": {

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import glob
 import csv
@@ -16,7 +16,6 @@ from azure.search.documents.indexes.models import (
     VectorSearch,
     VectorSearchProfile,
     HnswAlgorithmConfiguration)
-from azure.ai.inference.aio import EmbeddingsClient
 from azure.core.exceptions import ResourceNotFoundError, HttpResponseError
 
 
@@ -41,7 +40,7 @@ class SearchIndexManager:
             index_name: str,
             dimensions: Optional[int],
             model: str,
-            embeddings_client: EmbeddingsClient,
+            embeddings_client: Any,
         ) -> None:
         """Constructor."""
         self._dimensions = dimensions
