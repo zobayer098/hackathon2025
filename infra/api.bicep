@@ -9,6 +9,7 @@ param serviceName string = 'api'
 param exists bool
 param projectConnectionString string
 param chatDeploymentName string
+param searchConnectionName string
 
 resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: identityName
@@ -31,6 +32,10 @@ var env = [
   {
     name: 'RUNNING_IN_PRODUCTION'
     value: 'true'
+  }
+  {
+    name: 'AZURE_AI_SEARCH_CONNECTION_NAME'
+    value: searchConnectionName
   }
 ]
 
