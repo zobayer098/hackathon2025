@@ -10,6 +10,10 @@ param exists bool
 param projectConnectionString string
 param agentDeploymentName string
 param searchConnectionName string
+param embedDeploymentName string
+param aiSearchIndexName string
+param embedDeploymentDimensions string
+param searchServiceEndpoint string
 
 resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: identityName
@@ -30,12 +34,28 @@ var env = [
     value: agentDeploymentName
   }
   {
+    name: 'AZURE_AI_EMBED_DEPLOYMENT_NAME'
+    value: embedDeploymentName
+  }
+  {
+    name: 'AZURE_AI_SEARCH_INDEX_NAME'
+    value: aiSearchIndexName
+  }
+  {
+    name: 'AZURE_AI_EMBED_DIMENSIONS'
+    value: embedDeploymentDimensions
+  }
+  {
     name: 'RUNNING_IN_PRODUCTION'
     value: 'true'
   }
   {
     name: 'AZURE_AI_SEARCH_CONNECTION_NAME'
     value: searchConnectionName
+  }
+  {
+    name: 'AZURE_AI_SEARCH_ENDPOINT'
+    value: searchServiceEndpoint
   }
 ]
 
