@@ -14,8 +14,6 @@ param containerRegistryId string = ''
 param aiServicesName string
 @description('The AI Services connection name to use for the AI Foundry Hub Resource')
 param aiServicesConnectionName string
-// @description('The AI Services Content Safety connection name to use for the AI Foundry Hub Resource')
-// param aiServicesContentSafetyConnectionName string
 @description('The Azure Cognitive Search service name to use for the AI Foundry Hub Resource')
 param aiSearchName string = ''
 @description('The Azure Cognitive Search service connection name to use for the AI Foundry Hub Resource')
@@ -77,24 +75,6 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' =
       }
     }
   }
-
-  // resource contentSafetyConnection 'connections' = {
-  //   name: aiServicesContentSafetyConnectionName
-  //   properties: {
-  //     category: 'AzureOpenAI'
-  //     authType: 'ApiKey'
-  //     isSharedToAll: true
-  //     target: aiService.properties.endpoints['Content Safety']
-  //     metadata: {
-  //       ApiVersion: '2023-07-01-preview'
-  //       ApiType: 'azure'
-  //       ResourceId: aiService.id
-  //     }
-  //     credentials: {
-  //       key: aiService.listKeys().key1
-  //     }
-  //   }
-  // }
 
   resource searchConnection 'connections' =
     if (!empty(aiSearchName)) {
