@@ -50,23 +50,23 @@
     "useSearchService": {
       "value": "${USE_SEARCH_SERVICE=true}"
     },
-    "chatDeploymentName": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o-mini}"
+    "agentDeploymentName": {
+      "value": "${AZURE_AI_DEPLOYMENT_NAME=${AZURE_AI_AGENT_MODEL_NAME=gpt-4o-mini}}"
     },
-    "chatModelFormat": {
-      "value": "${AZURE_AI_CHAT_MODEL_FORMAT=OpenAI}"
+    "agentModelFormat": {
+      "value": "${AZURE_AI_AGENT_MODEL_FORMAT=OpenAI}"
     },
-    "chatModelName": {
-      "value": "${AZURE_AI_CHAT_MODEL_NAME=gpt-4o-mini}"
+    "agentModelName": {
+      "value": "${AZURE_AI_AGENT_MODEL_NAME=gpt-4o-mini}"
     },
-    "chatModelVersion": {
-      "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-07-18}"
+    "agentModelVersion": {
+      "value": "${AZURE_AI_AGENT_MODEL_VERSION=2024-07-18}"
     },
-    "chatDeploymentSku": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=GlobalStandard}"
+    "agentDeploymentSku": {
+      "value": "${AZURE_AI_AGENT_DEPLOYMENT_SKU=GlobalStandard}"
     },
-    "chatDeploymentCapacity": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=50}"
+    "agentDeploymentCapacity": {
+      "value": "${AZURE_AI_AGENT_DEPLOYMENT_CAPACITY=50}"
     },
     "embedDeploymentName": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_NAME=text-embedding-ada-002}"

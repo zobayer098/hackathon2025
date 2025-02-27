@@ -117,7 +117,7 @@ async def lifespan(app: fastapi.FastAPI):
             toolset.add(file_search_tool)
 
             agent = await ai_client.agents.create_agent(
-                model=os.environ["AZURE_AI_CHAT_DEPLOYMENT_NAME"],
+                model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
                 name="my-assistant", 
                 instructions="You are helpful assistant",
                 toolset=toolset

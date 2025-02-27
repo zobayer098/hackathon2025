@@ -43,44 +43,38 @@ To customize the model deployments, you can set the following environment variab
 
 ### Using a different chat model
 
-Change the chat deployment name:
+Change the agent model format (either OpenAI or Microsoft):
 
 ```shell
-azd env set AZURE_AI_CHAT_DEPLOYMENT_NAME Phi-3.5-MoE-instruct
+azd env set AZURE_AI_AGENT_MODEL_FORMAT Microsoft
 ```
 
-Change the chat model format (either OpenAI or Microsoft):
+Change the agent model name:
 
 ```shell
-azd env set AZURE_AI_CHAT_MODEL_FORMAT Microsoft
+azd env set AZURE_AI_AGENT_MODEL_NAME gpt-4o-mini
 ```
 
-Change the chat model name:
+Set the version of the agent model:
 
 ```shell
-azd env set AZURE_AI_CHAT_MODEL_NAME Phi-3.5-MoE-instruct
-```
-
-Set the version of the chat model:
-
-```shell
-azd env set AZURE_AI_CHAT_MODEL_VERSION 2
+azd env set AZURE_AI_AGENT_MODEL_VERSION 2024-07-18
 ```
 
 ### Setting capacity and deployment SKU
 
 For quota regions, you may find yourself needing to modify the default capacity and deployment SKU. The default tokens per minute deployed in this template is 50,000. 
 
-Change the capacity (in thousands of tokens per minute) of the chat deployment:
+Change the capacity (in thousands of tokens per minute) of the agent deployment:
 
 ```shell
-azd env set AZURE_AI_CHAT_DEPLOYMENT_CAPACITY 50
+azd env set AZURE_AI_AGENT_DEPLOYMENT_CAPACITY 50
 ```
 
-Change the SKU of the chat deployment:
+Change the SKU of the agent deployment:
 
 ```shell
-azd env set AZURE_AI_CHAT_DEPLOYMENT_SKU Standard
+azd env set AZURE_AI_AGENT_DEPLOYMENT_SKU Standard
 ```
 
 Change the capacity (in thousands of tokens per minute) of the embeddings deployment:

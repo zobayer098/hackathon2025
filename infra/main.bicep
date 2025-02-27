@@ -54,8 +54,6 @@ param applicationInsightsName string = ''
 param aiServicesName string = ''
 @description('The AI Services connection name. If ommited will use a default value')
 param aiServicesConnectionName string = ''
-// @description('The AI Services content safety connection name. If ommited will use a default value')
-// param aiServicesContentSafetyConnectionName string = ''
 @description('The Azure Container Registry resource name. If ommited will be generated')
 param containerRegistryName string = ''
 @description('The Azure Key Vault resource name. If ommited will be generated')
@@ -74,25 +72,25 @@ param principalId string = ''
 // Chat completion model
 @description('Format of the chat model to deploy')
 @allowed(['Microsoft', 'OpenAI'])
-param chatModelFormat string
+param agentModelFormat string
 
 @description('Name of the chat model to deploy')
-param chatModelName string
+param agentModelName string
 @description('Name of the model deployment')
-param chatDeploymentName string
+param agentDeploymentName string
 
 @description('Version of the chat model to deploy')
 // See version availability in this table:
 // https://learn.microsoft.com/azure/ai-services/openai/concepts/models#global-standard-model-availability
-param chatModelVersion string
+param agentModelVersion string
 
 @description('Sku of the chat deployment')
-param chatDeploymentSku string
+param agentDeploymentSku string
 
 @description('Capacity of the chat deployment')
 // You can increase this, but capacity is limited per model/region, so you will get errors if you go over
 // https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits
-param chatDeploymentCapacity int
+param agentDeploymentCapacity int
 
 // Embedding model
 @description('Format of the embedding model to deploy')
@@ -129,15 +127,15 @@ var tags = { 'azd-env-name': environmentName }
 
 var aiDeployments = [
   {
-    name: chatDeploymentName
+    name: agentDeploymentName
     model: {
-      format: chatModelFormat
-      name: chatModelName
-      version: chatModelVersion
+      format: agentModelFormat
+      name: agentModelName
+      version: agentModelVersion
     }
     sku: {
-      name: chatDeploymentSku
-      capacity: chatDeploymentCapacity
+      name: agentDeploymentSku
+      capacity: agentDeploymentCapacity
     }
   }
   {
@@ -188,9 +186,6 @@ module ai 'core/host/ai-environment.bicep' = if (empty(aiExistingProjectConnecti
       : '${abbrs.storageStorageAccounts}${resourceToken}'
     aiServicesName: !empty(aiServicesName) ? aiServicesName : 'aoai-${resourceToken}'
     aiServicesConnectionName: !empty(aiServicesConnectionName) ? aiServicesConnectionName : 'aoai-${resourceToken}'
-    // aiServicesContentSafetyConnectionName: !empty(aiServicesContentSafetyConnectionName)
-    //   ? aiServicesContentSafetyConnectionName
-    //   : 'aoai-content-safety-connection'
     aiServiceModelDeployments: aiDeployments
     logAnalyticsName: logAnalyticsWorkspaceResolvedName
     applicationInsightsName: !useApplicationInsights
@@ -333,7 +328,7 @@ module api 'api.bicep' = {
     containerAppsEnvironmentName: containerApps.outputs.environmentName
     containerRegistryName: containerApps.outputs.registryName
     projectConnectionString: projectConnectionString
-    chatDeploymentName: chatDeploymentName
+    agentDeploymentName: agentDeploymentName
     exists: apiAppExists
   }
 }
@@ -343,7 +338,7 @@ output AZURE_RESOURCE_GROUP string = rg.name
 // Outputs required for local development server
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_AIPROJECT_CONNECTION_STRING string = projectConnectionString
-output AZURE_AI_CHAT_DEPLOYMENT_NAME string = chatDeploymentName
+output AZURE_AI_AGENT_DEPLOYMENT_NAME string = agentDeploymentName
 
 // Outputs required by azd for ACA
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerApps.outputs.environmentName

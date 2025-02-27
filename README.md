@@ -30,6 +30,15 @@ Make sure the following tools are installed:
 2. [Python 3.9+](https://www.python.org/downloads/)
 3. [Git](https://git-scm.com/downloads)
 
+#### Quota Recommendations (Optional)
+
+The default for the model capacity in deployment is 50k tokens. For optimal performance, it is recommended to increase to 100k tokens. You can change the capacity by following the steps in [setting capacity and deployment SKU](docs/deploy_customization.md#customizing-model-deployments).
+
+* Navigate to the [Azure AI Foundry Portal](https://ai.azure.com/)
+* Select the AI Project you are using for this template if you are not already in the project.
+* Select Management center from the bottom left navigation menu
+* Select Quota, click the GlobalStandard dropdown and select the model and region you are using for this accelerator to see your available quota. Please note GPT-4o mini and text-embedding-ada-002 are used as default.
+* Request more quota or delete any unused model deployments as needed.
 
 #### Bringing an existing AI project resource
 
@@ -86,14 +95,12 @@ At this point you could make changes to the code if required. However, no change
 
 #### Configure your Agent (optional)
 <!-- TODO where do we want this? probably after downloading the code -->
-For options on customizing the deployment to disable resources, change resource names, or customize the models, you can follow these steps in [deployment customizations](docs/deploy_customization.md) now.
+If you want to personalize your agent, you can change the default configuration for your agent. This can include changing the model, adding tools, and uploading files to the agent. For more information on the Azure OpenAI models and non-Microsoft models that can be used in your deployment, view the [list of models supported by Azure AI Agent Service](https://learn.microsoft.com/azure/ai-services/agents/concepts/model-region-support).
 
-If you want to personalize your agent, you can change the default configuration for your agent. This can include changing the model, adding tools, and uploading files to the agent. More information can be found in [Customizing Model Deployments](docs/deploy_customization.md#customizing-model-deployments).
-
-To change the model, set the following environment variables:
+To specify the model (e.g. gpt-4o-mini, gpt-4o) that is deployed for the agent when `azd up` is called, set the following environment variables:
 ```shell
-azd env set AZURE_AI_CHAT_DEPLOYMENT_NAME <MODEL_DEPLOYMENT_NAME>
-azd env set AZURE_AI_CHAT_MODEL_NAME <MODEL_DEPLOYMENT_NAME>
+azd env set AZURE_AI_AGENT_MODEL_NAME <MODEL_NAME>
+azd env set AZURE_AI_AGENT_MODEL_VERSION <MODEL_VERSION>
 ```
 To add tools, update the `agents.yaml` file located in the repository.
 ```python
