@@ -97,34 +97,14 @@ async def lifespan(app: fastapi.FastAPI):
                 logger.error(f"Error fetching agent: {e}", exc_info=True)
                 create_new_agent = True
         if create_new_agent:
-            logger.info("Creating agent")
-            file_names = ["product_info_1.md", "product_info_2.md"]
-            for file_name in file_names:
-                file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files', file_name))
-                file = await ai_client.agents.upload_file_and_poll(file_path=file_path, purpose=FilePurpose.AGENTS)
-                logger.info(f"Uploaded file {file_path}, file ID: {file.id}")
-                # Store both file id and the file path using the file name as key.
-                files[file_name] = {"id": file.id, "path": file_path}
-            
-            # Create the vector store using the file IDs.
-            vector_store = await ai_client.agents.create_vector_store_and_poll(
-                file_ids=[info["id"] for info in files.values()],
-                name="sample_store"
-            )
-
-            file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
-            toolset = AsyncToolSet()
-            toolset.add(file_search_tool)
-
-            agent = await ai_client.agents.create_agent(
-                model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
-                name="my-assistant", 
-                instructions="You are helpful assistant",
-                toolset=toolset
-            )
-        
-            logger.info(f"Created agent, agent ID: {agent.id}")
-            logger.info(f"Created agent, model name: {agent.model}")
+            # Check if a previous agent created by the template exists
+            agent_list = await ai_client.agents.list_agents()
+            if agent_list.data:
+                for agent_object in agent_list.data:
+                    if agent_object.name == "agent-template-assistant":
+                        agent = agent_object
+        if agent == None:
+            raise Exception("Agent not found")
 
     except Exception as e:
         logger.error(f"Error creating agent: {e}", exc_info=True)
@@ -137,23 +117,6 @@ async def lifespan(app: fastapi.FastAPI):
     try:
         yield
     finally:
-        # Cleanup on shutdown.
-        if create_new_agent:
-            try:
-                for info in files.values():
-                    await ai_client.agents.delete_file(info["id"])
-                    logger.info(f"Deleted file {info['id']}")
-                
-                if vector_store:
-                    await ai_client.agents.delete_vector_store(vector_store.id)
-                    logger.info(f"Deleted vector store {vector_store.id}")
-
-                if agent:
-                    await ai_client.agents.delete_agent(agent.id)
-                    logger.info(f"Deleted agent {agent.id}")
-            except Exception as e:
-                logger.error(f"Error during cleanup: {e}", exc_info=True)
-
         try:
             await ai_client.close()
             logger.info("Closed AIProjectClient")

@@ -40,37 +40,6 @@ The default for the model capacity in deployment is 50k tokens. For optimal perf
 * Select Quota, click the GlobalStandard dropdown and select the model and region you are using for this accelerator to see your available quota. Please note GPT-4o mini and text-embedding-ada-002 are used as default.
 * Request more quota or delete any unused model deployments as needed.
 
-#### Creating and Importing an Agent
-
-You can create an agent in your project to import to this template. For more information on creating an agent, view [Quickstart: Create a New Agent](https://learn.microsoft.com/azure/ai-services/agents/quickstart?pivots=ai-foundry). There are three agent creation options:
-
-<details>
-  <summary><b>Azure AI Foundry Agents Playground</b></summary> 
-
-In [Azure AI Foundry](https://ai.azure.com/), navigate to the Agents Playground for your project. Here, you can create an agent and customize its name, model deployment, instructions, and tools, as well as upload files for file search. 
-</details>
-
-<details>
-  <summary><b>SDK Samples</b></summary> 
-
-You can create an agent using the Azure AI Projects SDK. By following the [instructions to create an agent using Python](https://learn.microsoft.com/azure/ai-services/agents/quickstart?pivots=programming-language-python-azure), you can create an agent using code based on the SDK samples. 
-
-</details>
-
-<details>
-  <summary><b>Assistants Tool</b></summary>
-
-Using the [Azure AI Assistants Tool](https://github.com/Azure-Samples/azureai-assistant-tool), you can create an agent and customize it with tools and functions. Then, you can export the agent and use the agent_id.  
-<!-- TODO: do we need to implement agents.yaml changes in order to use this solution? -->
-</details>
-
-After creating your agent, import the agent into this template by copying the agent_id and setting the following environment variable:
-
-```shell
-azd env set AZURE_AI_AGENT_ID "<agent_id>"
-```
-
-
 ## Development
 
 #### Code
@@ -83,19 +52,13 @@ At this point you could make changes to the code if required. However, no change
 
 #### Configure your Agent (optional)
 <!-- TODO where do we want this? probably after downloading the code -->
-If you want to personalize your agent, you can change the default configuration for your agent. This can include changing the model, adding tools, and uploading files to the agent. For more information on the Azure OpenAI models and non-Microsoft models that can be used in your deployment, view the [list of models supported by Azure AI Agent Service](https://learn.microsoft.com/azure/ai-services/agents/concepts/model-region-support).
+If you want to personalize your agent, you can change the default configuration for your agent. Additional details on changing your agent can be found in [customizing model deployments](docs/deploy_customization.md#customizing-model-deployments). For more information on the Azure OpenAI models and non-Microsoft models that can be used in your deployment, view the [list of models supported by Azure AI Agent Service](https://learn.microsoft.com/azure/ai-services/agents/concepts/model-region-support).
 
 To specify the model (e.g. gpt-4o-mini, gpt-4o) that is deployed for the agent when `azd up` is called, set the following environment variables:
 ```shell
 azd env set AZURE_AI_AGENT_MODEL_NAME <MODEL_NAME>
 azd env set AZURE_AI_AGENT_MODEL_VERSION <MODEL_VERSION>
 ```
-To add tools, update the `agents.yaml` file located in the repository.
-```python
-# TODO: add this once it is configured
-```
-<!-- To add files to be used for file search, upload your files to `src/api/files`. -->
-<!-- TODO: do we want this functionality? we would need to slightly alter the py file -->
 
 #### Logging
 If you want to enable logging to a file, uncomment the following line in Dockerfile located in the src directory:
