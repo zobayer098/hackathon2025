@@ -71,7 +71,7 @@ If you want to enable logging to a file, uncomment the following line in Dockerf
 
  **NOTE!** Any changes to the Dockerfile require a re-deployment in order for the changes to take effect.
 
-Consider whether you want to have logging to file enabled after the R&D phase, when running in production.
+The provided file logging implementation is intended for development purposes only, specifically for testing with a single client/worker. It should not be used in production environments after the R&D phase.
 
 #### Tracing to Azure Monitor
 To enable tracing to Azure Monitor, modify the value of ENABLE_AZURE_MONITOR_TRACING environment variable to true in Dockerfile found in src directory:
@@ -96,7 +96,7 @@ You can optionally use a local development server to test app changes locally. M
     On Windows:
 
     ```shell
-    py -3 -m venv .venv
+    python -3 -m venv .venv
     .venv\scripts\activate
     ```
 
