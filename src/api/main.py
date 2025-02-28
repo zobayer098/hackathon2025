@@ -101,7 +101,7 @@ async def lifespan(app: fastapi.FastAPI):
             agent_list = await ai_client.agents.list_agents()
             if agent_list.data:
                 for agent_object in agent_list.data:
-                    if agent_object.name == "agent-template-assistant":
+                    if agent_object.name == os.environ["AZURE_AI_AGENT_NAME"]:
                         agent = agent_object
         if agent == None:
             raise Exception("Agent not found")

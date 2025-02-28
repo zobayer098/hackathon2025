@@ -2,9 +2,9 @@
 # TODO: do we need hooks? 
 # TODO: do we need all of the variables?
 
-name: azd-aistudio-starter
+name: azd-agents-starter
 metadata:
-  template: azd-aistudio-starter@0.0.1-beta
+  template: azd-agents-starter@0.0.1-beta
 
 services:
   api:
@@ -42,6 +42,7 @@ pipeline:
     - USE_CONTAINER_REGISTRY
     - USE_APPLICATION_INSIGHTS
     - USE_SEARCH_SERVICE
+    - AZURE_AI_AGENT_NAME
     - AZURE_AI_AGENT_DEPLOYMENT_NAME
     - AZURE_AI_AGENT_DEPLOYMENT_SKU
     - AZURE_AI_AGENT_DEPLOYMENT_CAPACITY

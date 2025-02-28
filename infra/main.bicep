@@ -73,7 +73,8 @@ param principalId string = ''
 @description('Format of the chat model to deploy')
 @allowed(['Microsoft', 'OpenAI'])
 param agentModelFormat string
-
+@description('Name of agent to deploy')
+param agentName string
 @description('Name of the chat model to deploy')
 param agentModelName string
 @description('Name of the model deployment')
@@ -339,6 +340,7 @@ output AZURE_RESOURCE_GROUP string = rg.name
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_AIPROJECT_CONNECTION_STRING string = projectConnectionString
 output AZURE_AI_AGENT_DEPLOYMENT_NAME string = agentDeploymentName
+output AZURE_AI_AGENT_NAME string = agentName
 
 // Outputs required by azd for ACA
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerApps.outputs.environmentName

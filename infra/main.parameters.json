@@ -50,6 +50,9 @@
     "useSearchService": {
       "value": "${USE_SEARCH_SERVICE=true}"
     },
+    "agentName": {
+      "value": "${AZURE_AI_AGENT_NAME=agent-template-assistant}"
+    },
     "agentDeploymentName": {
       "value": "${AZURE_AI_AGENT_MODEL_NAME=gpt-4o-mini}"
     },
