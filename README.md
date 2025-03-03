@@ -86,49 +86,6 @@ To enable message contents to be included in the traces, set the following envir
 ENV AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED=true
 ```
 
-
-#### Local Development Server
-
-You can optionally use a local development server to test app changes locally. Make sure you first [deployed the app](#deployment) to Azure before running the development server.
-
-1. Create a [Python virtual environment](https://docs.python.org/3/tutorial/venv.html#creating-virtual-environments) and activate it.
-
-    On Windows:
-
-    ```shell
-    python -3 -m venv .venv
-    .venv\scripts\activate
-    ```
-
-    On Linux:
-
-    ```shell
-    python3 -m venv .venv
-    source .venv/bin/activate
-    ```
-
-2. Navigate to the `src` directory:
-
-    ```shell
-    cd src
-    ```
-
-3. Install required Python packages:
-
-    ```shell
-    python -m pip install -r requirements.txt
-    ```
-
-4. Run the local server:
-
-    ```shell
-    python -m uvicorn "api.main:create_app" --factory --reload
-    ```
-
-5. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser. It may take a few moments for application startup to complete. 
-
-6. Enter your message in the box.
-
 ## Deployment
 
 Once you've opened the project locally and made any desired adjustments, you can deploy it to Azure. 
