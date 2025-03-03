@@ -51,7 +51,7 @@
       "value": "${USE_SEARCH_SERVICE=true}"
     },
     "agentDeploymentName": {
-      "value": "${AZURE_AI_DEPLOYMENT_NAME=${AZURE_AI_AGENT_MODEL_NAME=gpt-4o-mini}}"
+      "value": "${AZURE_AI_AGENT_MODEL_NAME=gpt-4o-mini}"
     },
     "agentModelFormat": {
       "value": "${AZURE_AI_AGENT_MODEL_FORMAT=OpenAI}"

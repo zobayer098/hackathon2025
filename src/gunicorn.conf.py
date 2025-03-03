@@ -4,6 +4,11 @@
 import asyncio
 import multiprocessing
 import os
+from typing import Dict
+import asyncio
+from azure.ai.projects.aio import AIProjectClient
+from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet
+from azure.identity import DefaultAzureCredential
 
 from azure.identity.aio import DefaultAzureCredential
 
@@ -41,10 +46,64 @@ async def create_index_maybe():
                 await search_mgr.close()
 
 
-def on_starting(server):
-    """Server hook, called just before the master process is initialized."""
-    asyncio.get_event_loop().run_until_complete(create_index_maybe())
+async def init_agent_and_index():
+    files: Dict[str, Dict[str, str]] = {}  # File name -> {"id": file_id, "path": file_path}
+    vector_store = None
+    agent = None
+    await create_index_maybe()
 
+    try:
+        ai_client = AIProjectClient.from_connection_string(
+            credential=DefaultAzureCredential(exclude_shared_token_cache_credential=True),
+            conn_str=os.environ["AZURE_AIPROJECT_CONNECTION_STRING"],
+        )
+
+        if os.environ.get("AZURE_AI_AGENT_ID"):
+            try: 
+                agent = await ai_client.agents.get_agent(os.environ["AZURE_AI_AGENT_ID"])
+                return
+            except Exception as e:
+                print(f"Error fetching agent: {e}")
+
+        # Check if a previous agent created by the template exists
+        agent_list = await ai_client.agents.list_agents()
+        if agent_list.data:
+            for agent_object in agent_list.data:
+                if agent_object.name == "agent-template-assistant":
+                    return 
+        
+        # Add the AI index search.
+        conn_list = ai_client.connections.list()
+        conn_id = ""
+        for conn in conn_list:
+            if conn.connection_type == ConnectionType.AZURE_AI_SEARCH:
+                conn_id = conn.id
+                break
+
+        toolset = None
+        tool_definitions = None
+        if conn_id and os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'):
+            ai_search = AzureAISearchTool(index_connection_id=conn_id, index_name=os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'))
+            toolset = AsyncToolSet()
+            toolset.add(ai_search)
+            tool_definitions = ai_search.definitions
+
+        agent = await ai_client.agents.create_agent(
+            model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
+            name="agent-template-assistant", 
+            instructions="You are helpful assistant",
+            tools=ai_search.definitions,
+            toolset=toolset
+        )
+        print(f"Created agent, agent ID: {agent.id}")
+    
+    except Exception as e:
+        print(f"Error creating agent: {e}", exc_info=True)
+        raise RuntimeError(f"Failed to create the agent: {e}")
+    
+def on_starting(server):
+    """This code runs once before the workers will start."""
+    asyncio.get_event_loop().run_until_complete(list_or_create_agent())
 
 max_requests = 1000
 max_requests_jitter = 50
@@ -60,7 +119,7 @@ if not os.getenv("RUNNING_IN_PRODUCTION"):
 # https://docs.gunicorn.org/en/stable/settings.html
 preload_app = True
 num_cpus = multiprocessing.cpu_count()
-workers = 1 #(num_cpus * 2) + 1
+workers = (num_cpus * 2) + 1
 worker_class = "uvicorn.workers.UvicornWorker"
 
 timeout = 120
