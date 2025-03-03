@@ -8,6 +8,7 @@ Set-Content -Path $envFilePath -Value ""
 $azureAiProjectConnectionString = azd env get-value AZURE_AIPROJECT_CONNECTION_STRING
 $azureAiagentDeploymentName = azd env get-value AZURE_AI_AGENT_DEPLOYMENT_NAME
 $azureAiAgentId = azd env get-value AZURE_AI_AGENT_ID
+$azureAiAgentName = azd env get-value AZURE_AI_AGENT_NAME
 $azureTenantId = azd env get-value AZURE_TENANT_ID
 $searchConnectionName = azd env get-value AZURE_AI_SEARCH_CONNECTION_NAME
 $azureAIEmbedDeploymentName = azd env get-value AZURE_AI_EMBED_DEPLOYMENT_NAME
@@ -24,3 +25,5 @@ Add-Content -Path $envFilePath -Value "AZURE_AI_EMBED_DEPLOYMENT_NAME=$azureAIEm
 Add-Content -Path $envFilePath -Value "AZURE_AI_EMBED_DIMENSIONS=$azureAIEmbedDimensions"
 Add-Content -Path $envFilePath -Value "AZURE_AI_SEARCH_INDEX_NAME=$azureAISearchIndexName"
 Add-Content -Path $envFilePath -Value "AZURE_AI_SEARCH_ENDPOINT=$azureAISearchEndpoint"
+Add-Content -Path $envFilePath -Value "AZURE_AI_AGENT_NAME=$azureAiAgentName"
+Add-Content -Path $envFilePath -Value "AZURE_TENANT_ID=$azureTenantId"

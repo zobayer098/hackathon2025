@@ -71,7 +71,7 @@ If you want to enable logging to a file, uncomment the following line in Dockerf
 
  **NOTE!** Any changes to the Dockerfile require a re-deployment in order for the changes to take effect.
 
-Consider whether you want to have logging to file enabled after the R&D phase, when running in production.
+The provided file logging implementation is intended for development purposes only, specifically for testing with a single client/worker. It should not be used in production environments after the R&D phase.
 
 #### Tracing to Azure Monitor
 To enable tracing to Azure Monitor, modify the value of ENABLE_AZURE_MONITOR_TRACING environment variable to true in Dockerfile found in src directory:
@@ -85,49 +85,6 @@ To enable message contents to be included in the traces, set the following envir
 ```code
 ENV AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED=true
 ```
-
-
-#### Local Development Server
-
-You can optionally use a local development server to test app changes locally. Make sure you first [deployed the app](#deployment) to Azure before running the development server.
-
-1. Create a [Python virtual environment](https://docs.python.org/3/tutorial/venv.html#creating-virtual-environments) and activate it.
-
-    On Windows:
-
-    ```shell
-    py -3 -m venv .venv
-    .venv\scripts\activate
-    ```
-
-    On Linux:
-
-    ```shell
-    python3 -m venv .venv
-    source .venv/bin/activate
-    ```
-
-2. Navigate to the `src` directory:
-
-    ```shell
-    cd src
-    ```
-
-3. Install required Python packages:
-
-    ```shell
-    python -m pip install -r requirements.txt
-    ```
-
-4. Run the local server:
-
-    ```shell
-    python -m uvicorn "api.main:create_app" --factory --reload
-    ```
-
-5. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser. It may take a few moments for application startup to complete. 
-
-6. Enter your message in the box.
 
 ## Deployment
 
@@ -171,6 +128,9 @@ or [customize the models](docs/deploy_customization.md#customizing-model-deploym
     ```
     Check for any errors during the deployment, since updated app code will not get deployed if errors occur.
 
+⚠️ To avoid unnecessary costs, remember to take down your app if it's no longer in use,
+either by deleting the resource group in the Portal or running `azd down`.
+
 ## Tracing and Monitoring
 
 You can view console logs in Azure portal. You can get the link to the resource group with the azd tool:
@@ -192,7 +152,53 @@ You can view the App Insights tracing in Azure AI Foundry. Select your project o
 
 ## Development Options
 
-As an alternative to local development environment, the following development environment options can be used.
+In addition to the development setup documented above, the following development environment options can be used.
+
+<details>
+  <summary><b>Local Development Server</b></summary>
+
+#### Local Development Server
+
+You can optionally use a local development server to test app changes locally. Make sure you first [deployed the app](#deployment) to Azure before running the development server.
+
+1. Create a [Python virtual environment](https://docs.python.org/3/tutorial/venv.html#creating-virtual-environments) and activate it.
+
+    On Windows:
+
+    ```shell
+    python -m venv .venv
+    .venv\scripts\activate
+    ```
+
+    On Linux:
+
+    ```shell
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
+
+2. Navigate to the `src` directory:
+
+    ```shell
+    cd src
+    ```
+
+3. Install required Python packages:
+
+    ```shell
+    python -m pip install -r requirements.txt
+    ```
+
+4. Run the local server:
+
+    ```shell
+    python -m uvicorn "api.main:create_app" --factory --reload
+    ```
+
+5. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser.
+
+6. Enter your message in the box.
+</details>
 
 <details>
   <summary><b>GitHub Codespaces</b></summary>

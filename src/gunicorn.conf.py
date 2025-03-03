@@ -4,13 +4,37 @@
 import asyncio
 import multiprocessing
 import os
+import sys
 from typing import Dict
 import asyncio
+import logging
 from azure.ai.projects.aio import AIProjectClient
 from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet
 from azure.identity import DefaultAzureCredential
 
 from azure.identity.aio import DefaultAzureCredential
+
+
+# Create a central logger for the application
+logger = logging.getLogger("azureaiapp")
+logger.setLevel(logging.INFO)
+
+# Configure the stream handler (stdout)
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setLevel(logging.INFO)
+stream_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+stream_handler.setFormatter(stream_formatter)
+logger.addHandler(stream_handler)
+
+# Configure logging to file, if log file name is provided
+log_file_name = os.getenv("APP_LOG_FILE", "")
+if log_file_name != "":
+    file_handler = logging.FileHandler(log_file_name)
+    file_handler.setLevel(logging.INFO)
+    file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+
 
 
 async def create_index_maybe():
@@ -63,15 +87,15 @@ async def init_agent_and_index():
                 agent = await ai_client.agents.get_agent(os.environ["AZURE_AI_AGENT_ID"])
                 return
             except Exception as e:
-                print(f"Error fetching agent: {e}")
+                logger.info("Error with agent ID")
 
         # Check if a previous agent created by the template exists
         agent_list = await ai_client.agents.list_agents()
         if agent_list.data:
             for agent_object in agent_list.data:
-                if agent_object.name == "agent-template-assistant":
+                if agent_object.name == os.environ["AZURE_AI_AGENT_NAME"]:
                     return 
-        
+
         # Add the AI index search.
         conn_list = ai_client.connections.list()
         conn_id = ""
@@ -87,18 +111,19 @@ async def init_agent_and_index():
             toolset = AsyncToolSet()
             toolset.add(ai_search)
             tool_definitions = ai_search.definitions
+            logger.info("agent: initialized index")
 
         agent = await ai_client.agents.create_agent(
             model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
-            name="agent-template-assistant", 
+            name=os.environ["AZURE_AI_AGENT_NAME"], 
             instructions="You are helpful assistant",
             tools=ai_search.definitions,
             toolset=toolset
         )
-        print(f"Created agent, agent ID: {agent.id}")
+        logger.info("Created agent, agent ID: {agent.id}")
     
     except Exception as e:
-        print(f"Error creating agent: {e}", exc_info=True)
+        logger.info("Error creating agent: {e}", exc_info=True)
         raise RuntimeError(f"Failed to create the agent: {e}")
     
 def on_starting(server):
