@@ -128,7 +128,7 @@ async def init_agent_and_index():
     
 def on_starting(server):
     """This code runs once before the workers will start."""
-    asyncio.get_event_loop().run_until_complete(list_or_create_agent())
+    asyncio.get_event_loop().run_until_complete(init_agent_and_index())
 
 max_requests = 1000
 max_requests_jitter = 50
