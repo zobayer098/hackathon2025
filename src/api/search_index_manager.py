@@ -1,29 +1,30 @@
-from typing import Optional
+from typing import Any, Optional
 
 import glob
 import csv
 import json
+import os
 
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
-from azure.search.documents.models import VectorizedQuery 
+from azure.core.exceptions import HttpResponseError
 from azure.search.documents.indexes.models import (
+    AzureOpenAIVectorizer,
+    AzureOpenAIVectorizerParameters,
+    HnswAlgorithmConfiguration,
     SearchField,
-    SearchFieldDataType,  
-    SimpleField,
+    SearchFieldDataType,
     SearchIndex,
-    VectorSearch,
-    VectorSearchProfile,
-    HnswAlgorithmConfiguration)
-from azure.core.exceptions import ResourceNotFoundError, HttpResponseError
-from azure.search.documents.indexes.models import (
+    SearchIndexerDataUserAssignedIdentity,
     SemanticSearch,
     SemanticConfiguration,
     SemanticPrioritizedFields,
     SemanticField,
-    AzureOpenAIVectorizer,
-    AzureOpenAIVectorizerParameters
+    SimpleField,
+    #VectorizedQuery,
+    VectorSearch,
+    VectorSearchProfile,
 )
 
 
@@ -40,7 +41,9 @@ class SearchIndexManager:
                   must be the same as one use to build the file with embeddings.
     :param deployment_name: The name of the embedding deployment.
     :param embeddings_endpoint: The the endpoint used for embedding.
-    :param auth_identity: the managed identity used to access the embedding deployment. 
+    :param auth_identity: the managed identity used to access the embedding deployment.
+    :param embedding_client: The embedding client, used t build the embedding. Needed only
+                             to create embedding file. Not used in inference time.
     """
     
     MIN_DIFF_CHARACTERS_IN_LINE = 5
@@ -55,7 +58,8 @@ class SearchIndexManager:
             model: str,
             deployment_name: str,
             embedding_endpoint: str, 
-            auth_identity: str
+            auth_identity: str,
+            embedding_client: Optional[Any] = None
         ) -> None:
         """Constructor."""
         self._dimensions = dimensions
@@ -68,6 +72,7 @@ class SearchIndexManager:
         self._embedding_deployment = deployment_name
         self._auth_identity = auth_identity
         self._client = None
+        self._embedding_client = embedding_client
 
     def _get_client(self):
         """Get search client if it is absent."""
@@ -184,7 +189,9 @@ class SearchIndexManager:
                         parameters=AzureOpenAIVectorizerParameters(
                             resource_url=self._embeddings_endpoint,
                             deployment_name=self._embedding_deployment,
-                            auth_identity=self._auth_identity,
+                            auth_identity=SearchIndexerDataUserAssignedIdentity(
+                                resource_id=self._auth_identity
+                            ),
                             model_name=self._embedding_model
                         )
                     )
@@ -194,9 +201,9 @@ class SearchIndexManager:
                 default_configuration_name="index_search",
                 configurations=[
                     SemanticConfiguration(
-                        name="search_contents",
+                        name="index_search",
                         prioritized_fields=SemanticPrioritizedFields(
-                            title_field="embedId",
+                            title_field=SemanticField(field_name="embedId"),
                             content_fields=[SemanticField(field_name="token")]
                         )
                     )
@@ -215,7 +222,7 @@ class SearchIndexManager:
             self,
             input_directory: str,
             output_file: str,
-            sentences_per_embedding: int=4
+            sentences_per_embedding: int=4,
             ) -> None:
         """
         In this method we do lazy loading of nltk and download the needed data set to split
@@ -230,7 +237,6 @@ class SearchIndexManager:
         :param embeddings_client: The embedding client, used to create embeddings. 
                 Must be the same as the one used for SearchIndexManager creation.
         :param sentences_per_embedding: The number of sentences used to build embedding.
-        :param model: The embedding model to be used.
         """
         import nltk
         nltk.download('punkt')
@@ -238,6 +244,7 @@ class SearchIndexManager:
         from nltk.tokenize import sent_tokenize
         # Split the data to sentence tokens.
         sentence_tokens = []
+        references = []
         globs = glob.glob(input_directory + '/*.md', recursive=True)
         index = 0
         for fle in globs:
@@ -250,6 +257,7 @@ class SearchIndexManager:
                     for sentence in sent_tokenize(line):
                         if index % sentences_per_embedding == 0:
                             sentence_tokens.append(sentence)
+                            references.append(os.path.split(fle)[-1])
                         else:
                             sentence_tokens[-1] += ' '
                             sentence_tokens[-1] += sentence
@@ -259,16 +267,19 @@ class SearchIndexManager:
         # For each token build the embedding, which will be used in the search.
         batch_size = 2000
         with open(output_file, 'w') as fp:
-            writer = csv.DictWriter(fp, fieldnames=['token', 'embedding'])
+            writer = csv.DictWriter(fp, fieldnames=['token', 'embedding', 'document_reference'])
             writer.writeheader()
             for i in range(0, len(sentence_tokens), batch_size):
-                emedding = (await self._embeddings_client.embed(
+                emedding = (await self._embedding_client.embed(
                     input=sentence_tokens[i:i+min(batch_size, len(sentence_tokens))],
                     dimensions=self._dimensions,
                     model=self._embedding_model
                 ))["data"]
-                for token, float_data in zip(sentence_tokens, emedding):
-                    writer.writerow({'token': token, 'embedding': json.dumps(float_data['embedding'])})
+                for token, float_data, reference in zip(sentence_tokens, emedding, references):
+                    writer.writerow({
+                        'token': token,
+                        'embedding': json.dumps(float_data['embedding']),
+                        'document_reference': reference})
 
     async def close(self):
         """Close the closeable resources, associated with SearchIndexManager."""
