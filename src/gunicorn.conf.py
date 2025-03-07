@@ -4,6 +4,7 @@
 from typing import Dict
 
 import asyncio
+import csv
 import json
 import logging
 import multiprocessing
@@ -101,6 +102,18 @@ async def create_index_maybe(
             await search_mgr.close()
 
 
+def _get_file_path(file_name: str) -> str:
+    """
+    Get absolute file path.
+
+    :param file_name: The file name.
+    """
+    return os.path.abspath(
+        os.path.join(os.path.dirname(__file__),
+                     'files',
+                     file_name))
+
+
 async def get_available_toolset(
         ai_client: AIProjectClient,
         creds: AsyncTokenCredential) -> AsyncToolSet:
@@ -111,10 +124,12 @@ async def get_available_toolset(
     :param creds: The credentials, used for the index.
     :return: The tool set, available based on the environment.
     """
+    # File name -> {"id": file_id, "path": file_path}
+    files: Dict[str, Dict[str, str]] = {}
     # First try to get an index search.
     conn_id = ""
     if os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'):
-        conn_list = ai_client.connections.list()
+        conn_list = await ai_client.connections.list()
         for conn in conn_list:
             if conn.connection_type == ConnectionType.AZURE_AI_SEARCH:
                 conn_id = conn.id
@@ -130,26 +145,28 @@ async def get_available_toolset(
 
         toolset.add(ai_search)
         logger.info("agent: initialized index")
+        # Populate file links.
+        embeddings_path = os.path.join(
+            os.path.dirname(__file__), 'data', 'embeddings.csv')
+        with open(embeddings_path, newline='') as fp:
+            reader = csv.DictReader(fp)
+            for row in reader:
+                if row['document_reference'] in FILES_NAMES:
+                    files[row['document_reference']] = {
+                        "id": row['document_reference'],
+                        "path": _get_file_path(row['document_reference'])
+                    }
     else:
         logger.info(
             "agent: index was not initialized, falling back to file search.")
         # Upload files for file search
-        # File name -> {"id": file_id, "path": file_path}
-        files: Dict[str, Dict[str, str]] = {}
         for file_name in FILES_NAMES:
-            file_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'files',
-                    file_name))
+            file_path = _get_file_path(file_name)
             file = await ai_client.agents.upload_file_and_poll(
                 file_path=file_path, purpose=FilePurpose.AGENTS)
             # Store both file id and the file path using the file name as key.
             files[file_name] = {"id": file.id, "path": file_path}
 
-        # Serialize and store files information in the environment variable (so
-        # workers see it)
-        os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
         logger.info(
             f"Set env UPLOADED_FILE_MAP = {os.environ['UPLOADED_FILE_MAP']}")
 
@@ -162,6 +179,9 @@ async def get_available_toolset(
 
         file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
         toolset.add(file_search_tool)
+    # Serialize and store files information in the environment variable (so
+    # workers see it)
+    os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
     return toolset
 
 
@@ -173,7 +193,7 @@ async def create_agent(ai_client: AIProjectClient,
         model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
         name=os.environ["AZURE_AI_AGENT_NAME"],
         instructions="You are helpful assistant",
-        toolset=await get_available_toolset()
+        toolset=await get_available_toolset(ai_client, creds)
     )
     return agent
 
@@ -209,7 +229,7 @@ async def initialize_resources():
                             os.environ["AZURE_AI_AGENT_ID"])
                         logger.info(f"Found agent by ID: {agent.id}")
                         # Update the agent with the latest resources
-                        agent = await update_agent(agent, ai_client)
+                        agent = await update_agent(agent, ai_client, creds)
                         return
                     except Exception as e:
                         logger.warning(
@@ -221,18 +241,19 @@ async def initialize_resources():
                 if agent_list.data:
                     for agent_object in agent_list.data:
                         if agent_object.name == os.environ[
-                          "AZURE_AI_AGENT_NAME"]:
+                                "AZURE_AI_AGENT_NAME"]:
                             logger.info(
                                 "Found existing agent named "
                                 f"'{agent_object.name}'"
                                 f", ID: {agent_object.id}")
                             os.environ["AZURE_AI_AGENT_ID"] = agent_object.id
                             # Update the agent with the latest resources
-                            agent = await update_agent(agent_object, ai_client)
+                            agent = await update_agent(
+                                agent_object, ai_client, creds)
                             return
 
                 # Create a new agent
-                agent = await create_agent(ai_client)
+                agent = await create_agent(ai_client, creds)
                 os.environ["AZURE_AI_AGENT_ID"] = agent.id
                 logger.info(f"Created agent, agent ID: {agent.id}")
 
