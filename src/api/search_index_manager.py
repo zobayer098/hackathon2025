@@ -1,9 +1,10 @@
 from typing import Any, Optional
 
-import glob
 import csv
+import glob
 import json
 import os
+import time
 
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.search.documents.aio import SearchClient
@@ -16,16 +17,16 @@ from azure.search.documents.indexes.models import (
     SearchField,
     SearchFieldDataType,
     SearchIndex,
-    SearchIndexerDataUserAssignedIdentity,
     SemanticSearch,
     SemanticConfiguration,
     SemanticPrioritizedFields,
     SemanticField,
     SimpleField,
-    #VectorizedQuery,
     VectorSearch,
     VectorSearchProfile,
 )
+from azure.search.documents.models import VectorizableTextQuery
+
 
 
 class SearchIndexManager:
@@ -41,7 +42,7 @@ class SearchIndexManager:
                   must be the same as one use to build the file with embeddings.
     :param deployment_name: The name of the embedding deployment.
     :param embeddings_endpoint: The the endpoint used for embedding.
-    :param auth_identity: the managed identity used to access the embedding deployment.
+    :param embed_api_key: The api key used by the embedding resource.
     :param embedding_client: The embedding client, used t build the embedding. Needed only
                              to create embedding file. Not used in inference time.
     """
@@ -58,7 +59,7 @@ class SearchIndexManager:
             model: str,
             deployment_name: str,
             embedding_endpoint: str, 
-            auth_identity: str,
+            embed_api_key: str,
             embedding_client: Optional[Any] = None
         ) -> None:
         """Constructor."""
@@ -70,7 +71,7 @@ class SearchIndexManager:
         self._index = None
         self._embedding_model = model
         self._embedding_deployment = deployment_name
-        self._auth_identity = auth_identity
+        self._embed_api_key = embed_api_key
         self._client = None
         self._embedding_client = embedding_client
 
@@ -97,7 +98,8 @@ class SearchIndexManager:
                     {
                         'embedId': str(index),
                         'token': row['token'],
-                        'embedding': json.loads(row['embedding'])
+                        'embedding': json.loads(row['embedding']),
+                        'document_reference': row['document_reference'] 
                     }
                 )
                 index += 1
@@ -139,9 +141,33 @@ class SearchIndexManager:
             raise ValueError("vector_index_dimensions is different from dimensions provided to constructor.")
         return vector_index_dimensions
 
+    async def search(self, message: str) -> str:
+        """
+        Search the message in the vector store.
+
+        :param message: The customer question.
+        :return: The context for the question.
+        """
+        self._raise_if_no_index()
+        vector_query = VectorizableTextQuery(
+            text=message,
+            k_nearest_neighbors=5,
+            fields="embedding"
+        )
+        response = await self._get_client().search(
+            vector_queries=[vector_query],
+            select=['token', 'document_reference'],
+        )
+        # This lag is necessary, despite it is not described in documentation.
+        time.sleep(1)
+        results = [f"{result['token']}, source: {result['document_reference']}" async for result in response]
+        return "\n------\n".join(results)
+
     async def create_index(
         self,
-        vector_index_dimensions: Optional[int] = None) -> bool:
+        vector_index_dimensions: Optional[int] = None,
+        raise_on_error: bool=False
+        ) -> bool:
         """
         Create index or return false if it already exists.
 
@@ -152,6 +178,7 @@ class SearchIndexManager:
                the length of the list obtained.
                Also please see the embedding model documentation
                https://platform.openai.com/docs/models#embeddings
+        :param raise_on_error: Raise if index creation was not successful.
         :return: True if index was created, False otherwise.
         :raises: Value error if both dimensions of embedding model and vector_index_dimensions are not set
                  or both of them are set and they do not equal each other.
@@ -161,6 +188,8 @@ class SearchIndexManager:
             self._index = await self._index_create()
             return True
         except HttpResponseError:
+            if raise_on_error:
+                raise
             async with SearchIndexClient(endpoint=self._endpoint, credential=self._credential) as ix_client:
                 self._index = await ix_client.get_index(self._index_name)
             return False
@@ -178,10 +207,16 @@ class SearchIndexManager:
                     vector_search_profile_name="embedding_config"
                 ),
                 SearchField(name="token", searchable=True, type=SearchFieldDataType.String, hidden=False),
+                SearchField(name="document_reference", type=SearchFieldDataType.String, hidden=False),
             ]
             vector_search = VectorSearch(
-                profiles=[VectorSearchProfile(name="embedding_config",
-                                              algorithm_configuration_name="embed-algorithms-config")],
+                profiles=[
+                    VectorSearchProfile(
+                        name="embedding_config",
+                        algorithm_configuration_name="embed-algorithms-config",
+                        vectorizer_name="search_vectorizer"
+                    )
+                ],
                 algorithms=[HnswAlgorithmConfiguration(name="embed-algorithms-config")],
                 vectorizers=[
                     AzureOpenAIVectorizer(
@@ -189,9 +224,7 @@ class SearchIndexManager:
                         parameters=AzureOpenAIVectorizerParameters(
                             resource_url=self._embeddings_endpoint,
                             deployment_name=self._embedding_deployment,
-                            auth_identity=SearchIndexerDataUserAssignedIdentity(
-                                resource_id=self._auth_identity
-                            ),
+                            api_key=self._embed_api_key,
                             model_name=self._embedding_model
                         )
                     )
