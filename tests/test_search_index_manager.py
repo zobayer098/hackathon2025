@@ -121,7 +121,7 @@ class TestSearchIndexManager(unittest.IsolatedAsyncioTestCase):
                 "from dimensions provided to constructor."):
             await rag.create_index(vector_index_dimensions=42)
 
-    @unittest.skip("Only for live tests.")
+    #@unittest.skip("Only for live tests.")
     async def test_e2e(self):
         """Run search end to end."""
         async with DefaultAzureCredential() as creds:
@@ -153,9 +153,13 @@ class TestSearchIndexManager(unittest.IsolatedAsyncioTestCase):
                 result = await rag.search(
                     "What is the temperature rating "
                     "of the cozynights sleeping bag?")
+                result_semantic = await rag.semantic_search(
+                    "What is the temperature rating "
+                    "of the cozynights sleeping bag?")
                 await rag.delete_index()
                 await rag.close()
-                self.assertTrue(bool(result))
+                self.assertTrue(bool(result), "The regular search is empty.")
+                self.assertTrue(bool(result_semantic), "The semantic search is empty.")
 
     async def test_life_cycle_mock(self):
         """Test create, upload, search and delete"""

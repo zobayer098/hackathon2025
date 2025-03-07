@@ -167,6 +167,7 @@ class SearchIndexManager:
         response = await self._get_client().search(
             search_text=message,
             query_type="semantic",
+            search_fields=['token', 'document_reference'],
             semantic_configuration_name=SearchIndexManager._SEMANTIC_CONFIG,
         )
         return await self._format_search_results(response)
@@ -277,8 +278,10 @@ class SearchIndexManager:
                     SemanticConfiguration(
                         name=SearchIndexManager._SEMANTIC_CONFIG,
                         prioritized_fields=SemanticPrioritizedFields(
-                            title_field=SemanticField(field_name="embedId"),
-                            content_fields=[SemanticField(field_name="token")]
+                            title_field=SemanticField(field_name="document_reference"),
+                            content_fields=[
+                                SemanticField(field_name="token"),
+                            ]
                         )
                     )
                 ] 

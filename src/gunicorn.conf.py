@@ -124,8 +124,6 @@ async def get_available_toolset(
     :param creds: The credentials, used for the index.
     :return: The tool set, available based on the environment.
     """
-    # File name -> {"id": file_id, "path": file_path}
-    files: Dict[str, Dict[str, str]] = {}
     # First try to get an index search.
     conn_id = ""
     if os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'):
@@ -145,20 +143,11 @@ async def get_available_toolset(
 
         toolset.add(ai_search)
         logger.info("agent: initialized index")
-        # Populate file links.
-        embeddings_path = os.path.join(
-            os.path.dirname(__file__), 'data', 'embeddings.csv')
-        with open(embeddings_path, newline='') as fp:
-            reader = csv.DictReader(fp)
-            for row in reader:
-                if row['document_reference'] in FILES_NAMES:
-                    files[row['document_reference']] = {
-                        "id": row['document_reference'],
-                        "path": _get_file_path(row['document_reference'])
-                    }
     else:
         logger.info(
             "agent: index was not initialized, falling back to file search.")
+        # File name -> {"id": file_id, "path": file_path}
+        files: Dict[str, Dict[str, str]] = {}
         # Upload files for file search
         for file_name in FILES_NAMES:
             file_path = _get_file_path(file_name)
@@ -167,6 +156,9 @@ async def get_available_toolset(
             # Store both file id and the file path using the file name as key.
             files[file_name] = {"id": file.id, "path": file_path}
 
+        # Serialize and store files information in the environment variable (so
+        # workers see it)
+        os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
         logger.info(
             f"Set env UPLOADED_FILE_MAP = {os.environ['UPLOADED_FILE_MAP']}")
 
@@ -179,9 +171,7 @@ async def get_available_toolset(
 
         file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
         toolset.add(file_search_tool)
-    # Serialize and store files information in the environment variable (so
-    # workers see it)
-    os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
+
     return toolset
 
 
