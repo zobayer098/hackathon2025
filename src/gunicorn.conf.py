@@ -94,7 +94,7 @@ async def create_index_maybe(
             vector_index_dimensions=int(
                 os.getenv('AZURE_AI_EMBED_DIMENSIONS'))):
             embeddings_path = os.path.join(
-                os.path.dirname(__file__), 'api', 'data', 'embeddings.csv')
+                os.path.dirname(__file__), 'data', 'embeddings.csv')
 
             assert embeddings_path, f'File {embeddings_path} not found.'
             await search_mgr.upload_documents(embeddings_path)
@@ -224,15 +224,15 @@ async def initialize_resources():
                           "AZURE_AI_AGENT_NAME"]:
                             logger.info(
                                 "Found existing agent named "
-                                f"'{agent_object.name}', "
-                                f"ID: {agent_object.id}")
+                                f"'{agent_object.name}'"
+                                f", ID: {agent_object.id}")
                             os.environ["AZURE_AI_AGENT_ID"] = agent_object.id
                             # Update the agent with the latest resources
                             agent = await update_agent(agent_object, ai_client)
                             return
 
                 # Create a new agent
-                agent = await create_agent(ai_client, creds)
+                agent = await create_agent(ai_client)
                 os.environ["AZURE_AI_AGENT_ID"] = agent.id
                 logger.info(f"Created agent, agent ID: {agent.id}")
 
