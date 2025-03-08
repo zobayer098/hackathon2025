@@ -15,6 +15,7 @@ param aiSearchIndexName string
 param embeddingDeploymentDimensions string
 param searchServiceEndpoint string
 param agentName string
+param agentID string
 
 resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: identityName
@@ -33,6 +34,10 @@ var env = [
   {
     name: 'AZURE_AI_AGENT_NAME'
     value: agentName
+  }
+  {
+    name: 'AZURE_AI_AGENT_ID'
+    value: agentID
   }
   {
     name: 'AZURE_AI_AGENT_DEPLOYMENT_NAME'

@@ -77,6 +77,8 @@ param principalId string = ''
 param agentModelFormat string
 @description('Name of agent to deploy')
 param agentName string
+@description('ID of agent to deploy')
+param aiAgentID string = ''
 @description('Name of the chat model to deploy')
 param agentModelName string
 @description('Name of the model deployment')
@@ -133,6 +135,8 @@ var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location, seed))
 var projectName = !empty(aiProjectName) ? aiProjectName : 'ai-project-${resourceToken}'
 var tags = { 'azd-env-name': environmentName }
+
+var agentID = !empty(aiAgentID) ? aiAgentID : ''
 
 var aiDeployments = [
   {
@@ -296,6 +300,7 @@ module api 'api.bicep' = {
     embeddingDeploymentName: embeddingDeploymentName
     embeddingDeploymentDimensions: embeddingDeploymentDimensions
     agentName: agentName
+    agentID: agentID
     exists: apiAppExists
   }
 }
@@ -420,6 +425,7 @@ output AZURE_AI_SEARCH_INDEX_NAME string = aiSearchIndexName
 output AZURE_AI_SEARCH_ENDPOINT string = searchServiceEndpoint
 output AZURE_AI_EMBED_DIMENSIONS string = embeddingDeploymentDimensions
 output AZURE_AI_AGENT_NAME string = agentName
+output AZURE_AI_AGENT_ID string = agentID
 
 // Outputs required by azd for ACA
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerApps.outputs.environmentName
