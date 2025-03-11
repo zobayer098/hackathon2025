@@ -18,18 +18,10 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
-# Create a central logger for the application
-logger = logging.getLogger("azureaiapp")
-logger.setLevel(logging.INFO)
-
-# Configure the stream handler (stdout)
-stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setLevel(logging.INFO)
-stream_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-stream_handler.setFormatter(stream_formatter)
-logger.addHandler(stream_handler)
+from logging_config import configure_logging
 
 enable_trace = False
+logger = None
 
 @contextlib.asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
@@ -103,14 +95,8 @@ def create_app():
     if not os.getenv("RUNNING_IN_PRODUCTION"):
         load_dotenv(override=True)
 
-    # Configure logging to file, if log file name is provided
-    log_file_name = os.getenv("APP_LOG_FILE", "")
-    if log_file_name != "":
-        file_handler = logging.FileHandler(log_file_name)
-        file_handler.setLevel(logging.INFO)
-        file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-        file_handler.setFormatter(file_formatter)
-        logger.addHandler(file_handler)
+    global logger
+    logger = configure_logging(os.getenv("APP_LOG_FILE", ""))
 
     enable_trace_string = os.getenv("ENABLE_AZURE_MONITOR_TRACING", "")
     global enable_trace
