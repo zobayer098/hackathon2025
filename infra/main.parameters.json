@@ -48,7 +48,7 @@
       "value": "${USE_APPLICATION_INSIGHTS=true}"
     },
     "useSearchService": {
-      "value": "${USE_SEARCH_SERVICE=true}"
+      "value": "${USE_AZURE_AI_SEARCH_SERVICE=false}"
     },
     "agentName": {
       "value": "${AZURE_AI_AGENT_NAME=agent-template-assistant}"

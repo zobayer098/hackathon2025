@@ -178,12 +178,13 @@ async def get_available_toolset(
 async def create_agent(ai_client: AIProjectClient,
                        creds: AsyncTokenCredential) -> Agent:
     logger.info("Creating new agent with resources")
+    toolset = await get_available_toolset(ai_client, creds)
 
     agent = await ai_client.agents.create_agent(
         model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
         name=os.environ["AZURE_AI_AGENT_NAME"],
         instructions="You are helpful assistant",
-        toolset=await get_available_toolset(ai_client, creds)
+        toolset=toolset
     )
     return agent
 
@@ -191,13 +192,14 @@ async def create_agent(ai_client: AIProjectClient,
 async def update_agent(agent: Agent, ai_client: AIProjectClient,
                        creds: AsyncTokenCredential) -> Agent:
     logger.info("Updating agent with resources")
+    toolset = await get_available_toolset(ai_client, creds)
 
     agent = await ai_client.agents.update_agent(
-        assistant_id=agent.id,
+        agent_id=agent.id,
         model=os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"],
         name=os.environ["AZURE_AI_AGENT_NAME"],
         instructions="You are helpful assistant",
-        toolset=await get_available_toolset(ai_client, creds)
+        toolset=toolset
     )
     return agent
 

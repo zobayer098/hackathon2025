@@ -125,7 +125,7 @@ async def get_result(thread_id: str, agent_id: str, ai_client : AIProjectClient)
     try:
         async with await ai_client.agents.create_stream(
             thread_id=thread_id, 
-            assistant_id=agent_id,
+            agent_id=agent_id,
             event_handler=MyEventHandler(ai_client)
         ) as stream:
             logger.info("Successfully created stream; starting to process events")
