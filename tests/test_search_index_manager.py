@@ -32,13 +32,14 @@ class MockAsyncIterator:
 class TestSearchIndexManager(unittest.IsolatedAsyncioTestCase):
     """Tests for the RAG helper."""
 
-    # INPUT_DIR = os.path.join(
-    #            os.path.dirname(os.path.dirname(__file__)), 'data')
     INPUT_DIR = os.path.join(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.dirname(os.path.dirname(__file__)))), 'data_')
-    EMBEDDINGS_FILE = os.path.join(INPUT_DIR, 'embeddings.csv')
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'files')
+    # INPUT_DIR = os.path.join(
+    #     os.path.dirname(
+    #         os.path.dirname(
+    #             os.path.dirname(os.path.dirname(__file__)))), 'data_')
+    EMBEDDINGS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                                   'data', 'embeddings.csv')
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -121,7 +122,7 @@ class TestSearchIndexManager(unittest.IsolatedAsyncioTestCase):
                 "from dimensions provided to constructor."):
             await rag.create_index(vector_index_dimensions=42)
 
-    #@unittest.skip("Only for live tests.")
+    @unittest.skip("Only for live tests.")
     async def test_e2e(self):
         """Run search end to end."""
         async with DefaultAzureCredential() as creds:
@@ -167,8 +168,8 @@ class TestSearchIndexManager(unittest.IsolatedAsyncioTestCase):
         mock_aenter = AsyncMock()
         mock_serch_client = AsyncMock()
         mock_serch_client.search.return_value = MockAsyncIterator([
-            {'token': 'a', 'document_reference': 'a.txt'},
-            {'token': 'b', 'document_reference': 'b.txt'}
+            {'token': 'a', 'title': 'a.txt'},
+            {'token': 'b', 'title': 'b.txt'}
         ])
         with patch(
             'search_index_manager.SearchIndexClient',
@@ -266,6 +267,7 @@ class TestSearchIndexManager(unittest.IsolatedAsyncioTestCase):
                     await rag.build_embeddings_file(
                         input_directory=TestSearchIndexManager.INPUT_DIR,
                         output_file=TestSearchIndexManager.EMBEDDINGS_FILE,
+                        sentences_per_embedding=10
                     )
 
     @unittest.skip("Only for live tests.")

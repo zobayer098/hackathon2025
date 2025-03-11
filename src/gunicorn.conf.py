@@ -124,6 +124,8 @@ async def get_available_toolset(
     :param creds: The credentials, used for the index.
     :return: The tool set, available based on the environment.
     """
+    # File name -> {"id": file_id, "path": file_path}
+    files: Dict[str, Dict[str, str]] = {}
     # First try to get an index search.
     conn_id = ""
     if os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'):
@@ -142,12 +144,15 @@ async def get_available_toolset(
             index_name=os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'))
 
         toolset.add(ai_search)
+        # Register the files
+        for file_name in FILES_NAMES:
+            file_path = _get_file_path(file_name)
+            files[file_name] = {"id": file_name, "path": file_path}
         logger.info("agent: initialized index")
     else:
         logger.info(
             "agent: index was not initialized, falling back to file search.")
-        # File name -> {"id": file_id, "path": file_path}
-        files: Dict[str, Dict[str, str]] = {}
+        
         # Upload files for file search
         for file_name in FILES_NAMES:
             file_path = _get_file_path(file_name)
@@ -155,12 +160,6 @@ async def get_available_toolset(
                 file_path=file_path, purpose=FilePurpose.AGENTS)
             # Store both file id and the file path using the file name as key.
             files[file_name] = {"id": file.id, "path": file_path}
-
-        # Serialize and store files information in the environment variable (so
-        # workers see it)
-        os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
-        logger.info(
-            f"Set env UPLOADED_FILE_MAP = {os.environ['UPLOADED_FILE_MAP']}")
 
         # Create the vector store using the file IDs.
         vector_store = await ai_client.agents.create_vector_store_and_poll(
@@ -171,6 +170,11 @@ async def get_available_toolset(
 
         file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
         toolset.add(file_search_tool)
+    # Serialize and store files information in the environment variable (so
+    # workers see it)
+    os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
+    logger.info(
+        f"Set env UPLOADED_FILE_MAP = {os.environ['UPLOADED_FILE_MAP']}")
 
     return toolset
 

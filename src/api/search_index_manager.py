@@ -104,7 +104,7 @@ class SearchIndexManager:
                         'embedId': str(index),
                         'token': row['token'],
                         'embedding': json.loads(row['embedding']),
-                        'document_reference': row['document_reference'] 
+                        'title': row['title'] 
                     }
                 )
                 index += 1
@@ -153,7 +153,7 @@ class SearchIndexManager:
         :param response: The search results.
         :return: The formatted response string.
         """
-        results = [f"{result['token']}, source: {result['document_reference']}" async for result in response]
+        results = [f"{result['token']}, source: {result['title']}" async for result in response]
         return "\n------\n".join(results)
 
     async def semantic_search(self, message: str) -> str:
@@ -166,8 +166,8 @@ class SearchIndexManager:
         self._raise_if_no_index()
         response = await self._get_client().search(
             search_text=message,
-            query_type="semantic",
-            search_fields=['token', 'document_reference'],
+            query_type="full",
+            search_fields=['token', 'title'],
             semantic_configuration_name=SearchIndexManager._SEMANTIC_CONFIG,
         )
         return await self._format_search_results(response)
@@ -188,7 +188,7 @@ class SearchIndexManager:
         )
         response = await self._get_client().search(
             vector_queries=[vector_query],
-            select=['token', 'document_reference'],
+            select=['token', 'title'],
         )
         # This lag is necessary, despite it is not described in documentation.
         time.sleep(1)
@@ -249,7 +249,7 @@ class SearchIndexManager:
                     vector_search_profile_name=SearchIndexManager._EMBEDDING_CONFIG
                 ),
                 SearchField(name="token", searchable=True, type=SearchFieldDataType.String, hidden=False),
-                SearchField(name="document_reference", type=SearchFieldDataType.String, hidden=False),
+                SearchField(name="title", type=SearchFieldDataType.String, hidden=False),
             ]
             vector_search = VectorSearch(
                 profiles=[
@@ -278,7 +278,7 @@ class SearchIndexManager:
                     SemanticConfiguration(
                         name=SearchIndexManager._SEMANTIC_CONFIG,
                         prioritized_fields=SemanticPrioritizedFields(
-                            title_field=SemanticField(field_name="document_reference"),
+                            title_field=SemanticField(field_name="title"),
                             content_fields=[
                                 SemanticField(field_name="token"),
                             ]
@@ -344,7 +344,7 @@ class SearchIndexManager:
         # For each token build the embedding, which will be used in the search.
         batch_size = 2000
         with open(output_file, 'w') as fp:
-            writer = csv.DictWriter(fp, fieldnames=['token', 'embedding', 'document_reference'])
+            writer = csv.DictWriter(fp, fieldnames=['token', 'embedding', 'title'])
             writer.writeheader()
             for i in range(0, len(sentence_tokens), batch_size):
                 emedding = (await self._embedding_client.embed(
@@ -356,7 +356,7 @@ class SearchIndexManager:
                     writer.writerow({
                         'token': token,
                         'embedding': json.dumps(float_data['embedding']),
-                        'document_reference': reference})
+                        'title': reference})
 
     async def close(self):
         """Close the closeable resources, associated with SearchIndexManager."""
