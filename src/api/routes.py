@@ -85,9 +85,9 @@ class MyEventHandler(AsyncAgentEventHandler[str]):
     async def on_thread_run(self, run: ThreadRun) -> Optional[str]:
         logger.info("MyEventHandler: on_thread_run event received")
         run_information = f"ThreadRun status: {run.status}, thread ID: {run.thread_id}"
-        if run.status == "failed":
-            run_information += f", error: {run.last_error}"
         stream_data = {'content': run_information, 'type': 'thread_run'}
+        if run.status == "failed":
+            stream_data['error'] = run.last_error.as_dict()
         return serialize_sse_event(stream_data)
 
     async def on_error(self, data: str) -> Optional[str]:
