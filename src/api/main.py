@@ -84,7 +84,7 @@ async def lifespan(app: fastapi.FastAPI):
             else:
                 configure_azure_monitor(connection_string=application_insights_connection_string)
 
-        if os.environ.get("AZURE_AI_AGENT_ID") is not None:
+        if os.environ.get("AZURE_AI_AGENT_ID"):
             try: 
                 agent = await ai_client.agents.get_agent(os.environ["AZURE_AI_AGENT_ID"])
                 logger.info("Agent already exists, skipping creation")

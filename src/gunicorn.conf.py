@@ -116,7 +116,7 @@ async def initialize_resources():
         )
 
         # If the environment already has AZURE_AI_AGENT_ID, try fetching that agent
-        if os.environ.get("AZURE_AI_AGENT_ID") is not None:
+        if os.environ.get("AZURE_AI_AGENT_ID"):
             try: 
                 agent = await ai_client.agents.get_agent(os.environ["AZURE_AI_AGENT_ID"])
                 logger.info(f"Found agent by ID: {agent.id}")
