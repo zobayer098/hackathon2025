@@ -23,28 +23,13 @@ from azure.ai.projects.models import (
 from azure.identity.aio import DefaultAzureCredential
 from azure.core.credentials_async import AsyncTokenCredential
 
+from dotenv import load_dotenv
 
-# Create a central logger for the application
-logger = logging.getLogger("azureaiapp")
-logger.setLevel(logging.INFO)
+from logging_config import configure_logging
 
-# Configure the stream handler (stdout)
-stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setLevel(logging.INFO)
-stream_formatter = logging.Formatter(
-    "%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-stream_handler.setFormatter(stream_formatter)
-logger.addHandler(stream_handler)
+load_dotenv()
 
-# Configure logging to file, if log file name is provided
-log_file_name = os.getenv("APP_LOG_FILE", "")
-if log_file_name != "":
-    file_handler = logging.FileHandler(log_file_name)
-    file_handler.setLevel(logging.INFO)
-    file_formatter = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
+logger = configure_logging(os.getenv("APP_LOG_FILE", ""))
 
 FILES_NAMES = ["product_info_1.md", "product_info_2.md"]
 
