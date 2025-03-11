@@ -138,7 +138,7 @@ var tags = { 'azd-env-name': environmentName }
 
 var agentID = !empty(aiAgentID) ? aiAgentID : ''
 
-var aiDeployments = [
+var aiChatModel = [
   {
     name: agentDeploymentName
     model: {
@@ -151,6 +151,8 @@ var aiDeployments = [
       capacity: agentDeploymentCapacity
     }
   }
+]
+var aiEmbeddingModel = [ 
   {
     name: embeddingDeploymentName
     model: {
@@ -164,6 +166,10 @@ var aiDeployments = [
     }
   }
 ]
+
+var aiDeployments = concat(
+  aiChatModel,
+  useSearchService ? aiEmbeddingModel : [])
 
 //for container and app api
 param apiAppExists bool = false
