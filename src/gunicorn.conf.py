@@ -216,7 +216,6 @@ async def initialize_resources():
                 credential=creds,
                 conn_str=os.environ["AZURE_AIPROJECT_CONNECTION_STRING"],
             ) as ai_client:
-
                 # If the environment already has AZURE_AI_AGENT_ID, try
                 # fetching that agent
                 if os.environ.get("AZURE_AI_AGENT_ID") is not None:
