@@ -106,6 +106,19 @@ class ChatClient {
 
                         console.log("[ChatClient] Parsed SSE event:", data);
 
+                        if (data.error) {
+                            if (!messageDiv) {
+                                messageDiv = this.ui.createAssistantMessageDiv();
+                                console.log("[ChatClient] Created new messageDiv for assistant.");
+                            }
+                            this.ui.appendAssistantMessage(
+                                messageDiv,
+                                data.error.message || "An error occurred.",
+                                false
+                            );           
+                            return;                 
+                        }
+
                         // Check the data type to decide how to update the UI
                         if (data.type === "stream_end") {
                             // End of the stream
