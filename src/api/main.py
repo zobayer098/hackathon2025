@@ -9,7 +9,7 @@ import json
 from typing import Dict
 
 from azure.ai.projects.aio import AIProjectClient
-from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet
+from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet, FileSearchToolResource
 from azure.identity import DefaultAzureCredential
 
 import fastapi
@@ -76,7 +76,28 @@ async def lifespan(app: fastapi.FastAPI):
 
         app.state.ai_client = ai_client
         app.state.agent = agent
+        
+        
+        file_map: Dict[str, Dict[str, str]] = {}
 
+        logger.info(f"Creating UPLOADED_FILE_MAP")
+        if agent.tool_resources and agent.tool_resources.file_search:
+            for vector_store_id in agent.tool_resources.file_search.vector_store_ids:
+                file = await ai_client.agents.list_vector_store_files(vector_store_id)
+                for file in file.data:
+                    openAI_file = await ai_client.agents.get_file(file.id)
+                    logger.info(f"Retrieved file, file ID: {openAI_file.filename}")
+                    file_name = openAI_file.filename
+                    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..\\files', file_name))
+
+                    if not os.path.exists(file_path):
+                        logger.warning(f"File path does not exist: {file_path}")
+                        continue 
+                                       
+                    # Store both file id and the file path using the file name as key.
+                    file_map[file_name] = {"id": file.id, "path": file_path}
+        app.state.upload_file_map = file_map
+        logger.info(f"Set UPLOADED_FILE_MAP {file_map}")                    
         yield
 
     except Exception as e:

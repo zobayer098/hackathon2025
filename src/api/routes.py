@@ -272,14 +272,7 @@ async def fetch_document(request: Request):
     if not file_name:
         raise HTTPException(status_code=400, detail="file_name is required")
 
-    # Reconstruct the file dictionary from the env variable:
-    files_env = os.environ['UPLOADED_FILE_MAP']
-    try:
-        files = json.loads(files_env)
-        logger.info("Successfully parsed UPLOADED_FILE_MAP from environment variable.")
-    except json.JSONDecodeError:
-        files = {}
-        logger.warning("Failed to parse UPLOADED_FILE_MAP from environment variable.", exc_info=True)
+    files = request.app.state.upload_file_map
 
     logger.info(f"File requested: {file_name}. Current file keys: {list(files.keys())}")
 
