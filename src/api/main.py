@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 import json
-from typing import Dict
+from typing import Dict, Optional
 
 from azure.ai.projects.aio import AIProjectClient
 from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet, FileSearchToolResource
@@ -81,21 +81,27 @@ async def lifespan(app: fastapi.FastAPI):
         file_map: Dict[str, Dict[str, str]] = {}
 
         logger.info(f"Creating UPLOADED_FILE_MAP")
+        folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files'))
         if agent.tool_resources and agent.tool_resources.file_search:
             for vector_store_id in agent.tool_resources.file_search.vector_store_ids:
-                file = await ai_client.agents.list_vector_store_files(vector_store_id)
-                for file in file.data:
-                    openAI_file = await ai_client.agents.get_file(file.id)
-                    logger.info(f"Retrieved file, file ID: {openAI_file.filename}")
-                    file_name = openAI_file.filename
-                    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..\\files', file_name))
+                after: Optional[str] = None
+                has_more = True
+                while has_more:
+                    files = await ai_client.agents.list_vector_store_files(vector_store_id, after=after)
+                    has_more = files.has_more
+                    after = files.last_id
+                    for file in files.data:
+                        openAI_file = await ai_client.agents.get_file(file.id)
+                        logger.info(f"Retrieved file, file ID: {openAI_file.filename}")
+                        file_name = openAI_file.filename
+                        file_path = os.path.join(folder_path, file_name)
 
-                    if not os.path.exists(file_path):
-                        logger.warning(f"File path does not exist: {file_path}")
-                        continue 
+                        if not os.path.exists(file_path):
+                            logger.warning(f"File path does not exist: {file_path}")
+                            continue 
                                        
-                    # Store both file id and the file path using the file name as key.
-                    file_map[file_name] = {"id": file.id, "path": file_path}
+                        # Store both file id and the file path using the file name as key.
+                        file_map[file_name] = {"id": file.id, "path": file_path}
         app.state.upload_file_map = file_map
         logger.info(f"Set UPLOADED_FILE_MAP {file_map}")                    
         yield
