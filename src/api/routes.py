@@ -272,15 +272,14 @@ async def fetch_document(request: Request):
     if not file_name:
         raise HTTPException(status_code=400, detail="file_name is required")
 
-    files = request.app.state.upload_file_map
+    folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'files'))
 
-    logger.info(f"File requested: {file_name}. Current file keys: {list(files.keys())}")
+    file_path = os.path.join(folder_path, file_name)
 
-    if file_name not in files:
+    if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
     try:
-        file_path = files[file_name]["path"]
         data = await asyncio.to_thread(read_file, file_path)
         return PlainTextResponse(data)
     except Exception as e:
