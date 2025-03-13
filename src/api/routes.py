@@ -276,7 +276,7 @@ async def fetch_document(request: Request):
 
     file_path = os.path.join(folder_path, file_name)
 
-    if not os.path.exists(file_path):
+    if file_name not in os.listdir(folder_path): 
         raise HTTPException(status_code=404, detail="File not found")
 
     try:
