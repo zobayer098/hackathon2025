@@ -100,7 +100,7 @@ class ChatUI {
         const chatColumn = document.getElementById("chat-container");
 
         // Hide the document viewer and the close button
-        docViewerSection.style.display = 'none';
+        docViewerSection.style.setProperty("display", "none", "important");
         docViewerSection.classList.add("hidden");
         docViewerSection.classList.remove("visible");
         document.getElementById("close-button").style.display = 'none';
@@ -205,6 +205,34 @@ class ChatUI {
         const inputBox = document.querySelector('#chat-area');
         if (inputBox) {
             inputBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }
+
+    async loadChatHistory() {
+        var response = await fetch("/chat/history", {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include' 
+        });
+        
+        if (response.ok)    {
+            var json_response = await response.json();
+        
+            const reversedResponse = [...json_response].reverse();
+            for (let response of reversedResponse) {
+                var msg = response.content;
+                if (message.role === "user") {
+                    this.appendUserMessage(msg);
+                } else {
+                    var messageDiv = this.createAssistantMessageDiv();
+                    this.appendAssistantMessage(messageDiv, msg, false, response.annotations);
+                }
+            }
+        } else {
+            var messageDiv = this.createAssistantMessageDiv();
+            this.appendAssistantMessage(messageDiv, "Error occurs while loading chat history!", false, []);
         }
     }
 }
