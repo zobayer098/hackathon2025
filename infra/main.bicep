@@ -8,28 +8,13 @@ param environmentName string
 @minLength(1)
 @description('Location for all resources')
 // Look for desired models on the availability table:
-// https://learn.microsoft.com/azure/ai-services/openai/concepts/models#global-standard-model-availability
+// Agents must be supported in the region
+// https://learn.microsoft.com/azure/ai-services/agents/concepts/model-region-support
 @allowed([
-  'australiaeast'
-  'brazilsouth'
-  'canadaeast'
   'eastus'
   'eastus2'
-  'francecentral'
-  'germanywestcentral'
-  'japaneast'
-  'koreacentral'
-  'northcentralus'
-  'norwayeast'
-  'polandcentral'
-  'spaincentral'
-  'southafricanorth'
-  'southcentralus'
-  'southindia'
   'swedencentral'
   'switzerlandnorth'
-  'uksouth'
-  'westeurope'
   'westus'
   'westus3'
 ])
