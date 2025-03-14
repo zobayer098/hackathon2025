@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license.
 # See LICENSE file in the project root for full license information.
-from typing import Dict
+from typing import Dict, List
 
 import asyncio
 import csv
@@ -110,7 +110,7 @@ async def get_available_toolset(
     :return: The tool set, available based on the environment.
     """
     # File name -> {"id": file_id, "path": file_path}
-    files: Dict[str, Dict[str, str]] = {}
+    file_ids: List[str] = []
     # First try to get an index search.
     conn_id = ""
     if os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'):
@@ -129,11 +129,6 @@ async def get_available_toolset(
             index_name=os.environ.get('AZURE_AI_SEARCH_INDEX_NAME'))
 
         toolset.add(ai_search)
-        # Register the files
-        for file_name in FILES_NAMES:
-            file_path = _get_file_path(file_name)
-            files[file_name] = {"id": file_name, "path": file_path}
-        logger.info("agent: initialized index")
     else:
         logger.info(
             "agent: index was not initialized, falling back to file search.")
@@ -144,22 +139,17 @@ async def get_available_toolset(
             file = await ai_client.agents.upload_file_and_poll(
                 file_path=file_path, purpose=FilePurpose.AGENTS)
             # Store both file id and the file path using the file name as key.
-            files[file_name] = {"id": file.id, "path": file_path}
+            file_ids.append(file.id)
 
         # Create the vector store using the file IDs.
         vector_store = await ai_client.agents.create_vector_store_and_poll(
-            file_ids=[info["id"] for info in files.values()],
+            file_ids=file_ids,
             name="sample_store"
         )
         logger.info("agent: file store and vector store success")
 
         file_search_tool = FileSearchTool(vector_store_ids=[vector_store.id])
         toolset.add(file_search_tool)
-    # Serialize and store files information in the environment variable (so
-    # workers see it)
-    os.environ["UPLOADED_FILE_MAP"] = json.dumps(files)
-    logger.info(
-        f"Set env UPLOADED_FILE_MAP = {os.environ['UPLOADED_FILE_MAP']}")
 
     return toolset
 

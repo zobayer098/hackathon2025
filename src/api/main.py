@@ -6,10 +6,10 @@ import logging
 import os
 import sys
 import json
-from typing import Dict
+from typing import Dict, Optional
 
 from azure.ai.projects.aio import AIProjectClient
-from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet
+from azure.ai.projects.models import FilePurpose, FileSearchTool, AsyncToolSet, FileSearchToolResource
 from azure.identity import DefaultAzureCredential
 
 import fastapi
@@ -76,7 +76,7 @@ async def lifespan(app: fastapi.FastAPI):
 
         app.state.ai_client = ai_client
         app.state.agent = agent
-
+        
         yield
 
     except Exception as e:
