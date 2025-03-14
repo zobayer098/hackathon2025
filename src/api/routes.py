@@ -13,12 +13,17 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Str
 from fastapi.templating import Jinja2Templates
 
 from azure.ai.projects.aio import AIProjectClient
+from fastapi.responses import JSONResponse
 from azure.ai.projects.models import (
     Agent,
     MessageDeltaChunk,
     ThreadMessage,
     ThreadRun,
     AsyncAgentEventHandler,
+    OpenAIPageableListOfThreadMessage,
+    MessageTextContent,
+    MessageTextFileCitationAnnotation,
+    MessageTextUrlCitationAnnotation,
     RunStep
 )
 
@@ -47,7 +52,28 @@ def get_agent(request: Request) -> Agent:
 def serialize_sse_event(data: Dict) -> str:
     return f"data: {json.dumps(data)}\n\n"
 
+async def get_message_and_annotations(ai_client : AIProjectClient, message: ThreadMessage) -> Dict:
+        annotations = []
+        # Get file annotations for the file search.
+        for annotation in (a.as_dict() for a in message.file_citation_annotations):
+            file_id = annotation["file_citation"]["file_id"]
+            logger.info(f"Fetching file with ID for annotation {file_id}")
+            openai_file = await ai_client.agents.get_file(file_id)
+            annotation["file_name"] = openai_file.filename
+            logger.info(f"File name for annotation: {annotation['file_name']}")
+            annotations.append(annotation)
 
+        # Get url annotation for the index search.
+        for url_annotation in message.url_citation_annotations:
+            annotation = url_annotation.as_dict()
+            annotation["file_name"] = annotation['url_citation']['title']
+            logger.info(f"File name for annotation: {annotation['file_name']}")
+            annotations.append(annotation)
+                
+        return {
+                'content': message.text_messages[0].text.value,
+                'annotations': annotations
+            }
 class MyEventHandler(AsyncAgentEventHandler[str]):
     def __init__(self, ai_client: AIProjectClient):
         super().__init__()
@@ -64,28 +90,9 @@ class MyEventHandler(AsyncAgentEventHandler[str]):
                 return None
 
             logger.info("MyEventHandler: Received completed message")
-            annotations = []
-            # Get file annotations for the file search.
-            for annotation in (a.as_dict() for a in message.file_citation_annotations):
-                file_id = annotation["file_citation"]["file_id"]
-                logger.info(f"Fetching file with ID for annotation {file_id}")
-                openai_file = await self.ai_client.agents.get_file(file_id)
-                annotation["file_name"] = openai_file.filename
-                logger.info(f"File name for annotation: {annotation['file_name']}")
-                annotations.append(annotation)
 
-            # Get url annotation for the index search.
-            for url_annotation in message.url_citation_annotations:
-                annotation = url_annotation.as_dict()
-                annotation["file_name"] = annotation['url_citation']['title']
-                logger.info(f"File name for annotation: {annotation['file_name']}")
-                annotations.append(annotation)
-
-            stream_data = {
-                'content': message.text_messages[0].text.value,
-                'annotations': annotations,
-                'type': "completed_message"
-            }
+            stream_data = await get_message_and_annotations(self.ai_client, message)
+            stream_data['type'] = "completed_message"
             return serialize_sse_event(stream_data)
         except Exception as e:
             logger.error(f"Error in event handler for thread message: {e}", exc_info=True)
@@ -148,6 +155,52 @@ async def get_result(thread_id: str, agent_id: str, ai_client : AIProjectClient)
     except Exception as e:
         logger.exception(f"Exception in get_result: {e}")
         yield serialize_sse_event({'type': "error", 'message': str(e)})
+
+
+@router.get("/chat/history")
+async def history(
+    request: Request,
+    ai_client : AIProjectClient = Depends(get_ai_client),
+    agent : Agent = Depends(get_agent),
+):
+    # Retrieve the thread ID from the cookies (if available).
+    thread_id = request.cookies.get('thread_id')
+    agent_id = request.cookies.get('agent_id')
+
+    # Attempt to get an existing thread. If not found, create a new one.
+    try:
+        if thread_id and agent_id == agent.id:
+            logger.info(f"Retrieving thread with ID {thread_id}")
+            thread = await ai_client.agents.get_thread(thread_id)
+        else:
+            logger.info("Creating a new thread")
+            thread = await ai_client.agents.create_thread()
+    except Exception as e:
+        logger.error(f"Error handling thread: {e}")
+        raise HTTPException(status_code=400, detail=f"Error handling thread: {e}")
+
+    thread_id = thread.id
+    messages = OpenAIPageableListOfThreadMessage()
+
+    # Create a new message from the user's input.
+    try:
+        content = []
+        response = await ai_client.agents.list_messages(
+            thread_id=thread_id,
+        )
+        for message in response.data:
+            content.append(await get_message_and_annotations(ai_client, message))
+                                        
+        logger.info(f"List message, thread ID: {thread_id}")
+        response = JSONResponse(content=content)
+    
+        # Update cookies to persist the thread and agent IDs.
+        response.set_cookie("thread_id", thread_id)
+        response.set_cookie("agent_id", agent_id)
+        return response
+    except Exception as e:
+        logger.error(f"Error listing message: {e}")
+        raise HTTPException(status_code=500, detail=f"Error list message: {e}")
 
 
 @router.post("/chat")
