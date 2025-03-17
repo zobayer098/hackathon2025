@@ -222,7 +222,7 @@ module logAnalytics 'core/monitor/loganalytics.bicep' = if (!empty(aiExistingPro
   }
 }
 
-var hostName = empty(aiExistingProjectConnectionString) ? split(ai.outputs.discoveryUrl, '/')[2] : ''
+var hostName = empty(aiExistingProjectConnectionString) && !empty(ai.outputs.discoveryUrl) && contains(ai.outputs.discoveryUrl, '/') ? split(ai.outputs.discoveryUrl, '/')[2] : ''
 var projectConnectionString = empty(hostName)
   ? aiExistingProjectConnectionString
   : '${hostName};${subscription().subscriptionId};${rg.name};${projectName}'
@@ -240,7 +240,7 @@ module monitoringMetricsContribuitorRoleAzureAIDeveloperRG 'core/security/appins
   }
 }
 
-resource existingProjectRG 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(aiExistingProjectConnectionString)) {
+resource existingProjectRG 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (!empty(aiExistingProjectConnectionString) && contains(aiExistingProjectConnectionString, ';')) {
   name: split(aiExistingProjectConnectionString, ';')[2]
 }
 
