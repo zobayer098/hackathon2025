@@ -8,7 +8,7 @@ param sku object = {
 }
 
 param authOptions object = {}
-param disableLocalAuth bool = false
+param disableLocalAuth bool = true
 param disabledDataExfiltrationOptions array = []
 param encryptionWithCmk object = {
   enforcement: 'Unspecified'
