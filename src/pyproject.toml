@@ -1,5 +1,5 @@
 [project]
-name = "quartapp"
+name = "get-started-with-ai-agents"
 version = "1.0.0"
 description = "Create a simple chat app using Quart and Azure AI Agents"
 dependencies = [
@@ -7,7 +7,7 @@ dependencies = [
     "gunicorn==22.0.0",
     "uvicorn[standard]==0.29.0",
     "openai",
-    "azure-ai-inference[prompts]"
+    "azure-ai-inference[prompts]",
     "azure-identity==1.19.0",
     "aiohttp==3.11.1",
     "azure-ai-projects",
