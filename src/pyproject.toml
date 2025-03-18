@@ -1,5 +1,5 @@
 [project]
-name = "get-started-with-ai-agents"
+name = "api"
 version = "1.0.0"
 description = "Create a simple chat app using Quart and Azure AI Agents"
 dependencies = [
@@ -13,7 +13,7 @@ dependencies = [
     "azure-ai-projects",
     "azure-core-tracing-opentelemetry",
     "azure-monitor-opentelemetry",
-    "aazure-search-documents"
+    "azure-search-documents"
     ]
 
 [build-system]
