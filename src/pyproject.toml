@@ -1,18 +1,18 @@
 [project]
-name = "quartapp"
+name = "api"
 version = "1.0.0"
 description = "Create a simple chat app using Quart and Azure AI Agents"
 dependencies = [
-    "quart",
-    "werkzeug",
-    "gunicorn",
-    "uvicorn[standard]",
-    "openai",
-    "azure-identity",
-    "aiohttp",
-    "python-dotenv",
-    "pyyaml",
-    "azure-ai-projects"
+    "fastapi==0.111.0",
+    "gunicorn==22.0.0",
+    "uvicorn[standard]==0.29.0",
+    "opentelemetry-sdk",
+    "azure-identity==1.19.0",
+    "aiohttp==3.11.1",
+    "azure-ai-projects",
+    "azure-core-tracing-opentelemetry",
+    "azure-monitor-opentelemetry",
+    "azure-search-documents"
     ]
 
 [build-system]
