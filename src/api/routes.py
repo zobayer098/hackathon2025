@@ -189,7 +189,10 @@ async def history(
             thread_id=thread_id,
         )
         for message in response.data:
-            content.append(await get_message_and_annotations(ai_client, message))
+            formated_message = await get_message_and_annotations(ai_client, message)
+            formated_message['role'] = message.role
+            content.append(formated_message)
+                
                                         
         logger.info(f"List message, thread ID: {thread_id}")
         response = JSONResponse(content=content)
