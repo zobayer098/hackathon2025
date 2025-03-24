@@ -203,15 +203,19 @@ You can optionally use a local development server to test app changes locally. M
     python -m pip install -r requirements.txt
     ```
 
-4. Run the local server:
+4. Duplicate `src/.env.sample` and name to `.env`.
+
+5. Fill in the environamnet in `.env`.
+
+6. Run the local server:
 
     ```shell
     python -m uvicorn "api.main:create_app" --factory --reload
     ```
 
-5. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser.
+7. Click 'http://127.0.0.1:8000' in the terminal, which should open a new tab in the browser.
 
-6. Enter your message in the box.
+8. Enter your message in the box.
 </details>
 
 ### Deploying Steps
