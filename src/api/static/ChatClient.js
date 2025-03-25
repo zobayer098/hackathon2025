@@ -12,6 +12,7 @@ class ChatClient {
 
         console.log("[ChatClient] Sending message:", message);
         this.ui.appendUserMessage(message);
+        document.getElementById("generating-message").style.display = "block";
 
         const postData = { message: message };
 
@@ -48,6 +49,7 @@ class ChatClient {
             this.handleMessages(response.body);
 
         } catch (error) {
+            document.getElementById("generating-message").style.display = "none";
             if (error.name === 'AbortError') {
                 console.log('[ChatClient] Fetch request aborted by user.');
             } else {
@@ -111,6 +113,7 @@ class ChatClient {
                                 messageDiv = this.ui.createAssistantMessageDiv();
                                 console.log("[ChatClient] Created new messageDiv for assistant.");
                             }
+                            document.getElementById("generating-message").style.display = "none";
                             this.ui.appendAssistantMessage(
                                 messageDiv,
                                 data.error.message || "An error occurred.",
@@ -142,6 +145,7 @@ class ChatClient {
                                 annotations = data.annotations;
                                 isStreaming = false;
                                 console.log("[ChatClient] Received completed message:", accumulatedContent);
+                                document.getElementById("generating-message").style.display = "none";
                             } else {
                                 accumulatedContent += data.content;
                                 console.log("[ChatClient] Received streaming chunk:", data.content);

@@ -12,16 +12,10 @@ function initChat() {
     const form = document.getElementById("chat-form");
     const messageInput = document.getElementById("message");
     const targetContainer = document.getElementById("messages");
-    const placeholderWrapper = document.getElementById("placeholder-wrapper");
 
     form.addEventListener("submit", async function(e) {
         e.preventDefault();
         
-        // Remove placeholder message if it exists
-        if (placeholderWrapper) {
-            placeholderWrapper.remove();
-        }
-
         await chatClient.sendMessage("/chat", messageInput.value.trim());
         messageInput.value = "";
     });
