@@ -33,6 +33,14 @@ class ChatUI {
         return content;
     } 
 
+    removePlaceholder() {
+        // Remove placeholder message if it exists
+        const placeholderWrapper = document.getElementById("placeholder-wrapper");
+        if (placeholderWrapper) {
+            placeholderWrapper.remove();
+        }            
+    }    
+
     addCitationClickListener() {
         document.addEventListener('click', (event) => {
             if (event.target.classList.contains('file-citation')) {
@@ -118,6 +126,9 @@ class ChatUI {
     }
 
     appendUserMessage(message) {
+        // Remove the placeholder message
+        this.removePlaceholder();
+
         const userTemplateClone = this.userTemplate.content.cloneNode(true);
         userTemplateClone.querySelector(".message-content").textContent = message;
         this.targetContainer.appendChild(userTemplateClone);
@@ -164,12 +175,15 @@ class ChatUI {
         }
     }
 
-    createAssistantMessageDiv() {
+    createAssistantMessageDiv() {        
         const assistantTemplateClone = this.assistantTemplate.content.cloneNode(true);
         if (!assistantTemplateClone) {
             console.error("Failed to clone assistant template.");
             return null;
         }
+
+        // Remove the placeholder message
+        this.removePlaceholder();
     
         // Append the clone to the target container
         this.targetContainer.appendChild(assistantTemplateClone);
