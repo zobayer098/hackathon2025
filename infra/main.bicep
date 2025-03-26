@@ -280,6 +280,7 @@ module api 'api.bicep' = {
     name: 'ca-api-${resourceToken}'
     location: location
     tags: tags
+    serviceName: 'api and frontend'
     identityName: '${abbrs.managedIdentityUserAssignedIdentities}api-${resourceToken}'
     containerAppsEnvironmentName: containerApps.outputs.environmentName
     containerRegistryName: containerApps.outputs.registryName
