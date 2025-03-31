@@ -72,7 +72,7 @@ param serviceBinds array = []
 param targetPort int = 80
 
 resource existingApp 'Microsoft.App/containerApps@2023-05-02-preview' existing = if (exists) {
-  name: name
+  name: 'crgetstartwithaiagents'
 }
 
 module app 'container-app.bicep' = {
@@ -86,7 +86,7 @@ module app 'container-app.bicep' = {
     ingressEnabled: ingressEnabled
     containerName: containerName
     containerAppsEnvironmentName: containerAppsEnvironmentName
-    containerRegistryName: containerRegistryName
+    // containerRegistryName: containerRegistryName
     containerRegistryHostSuffix: containerRegistryHostSuffix
     containerCpuCoreCount: containerCpuCoreCount
     containerMemory: containerMemory

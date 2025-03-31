@@ -278,10 +278,12 @@ module api 'api.bicep' = {
     name: 'ca-api-${resourceToken}'
     location: location
     tags: tags
-    serviceName: 'api_and_frontend'
+    serviceName: 'api_and_frontend'    
+    // serviceName: 'get-started-with-ai-agents'
     identityName: '${abbrs.managedIdentityUserAssignedIdentities}api-${resourceToken}'
     containerAppsEnvironmentName: containerApps.outputs.environmentName
-    containerRegistryName: containerApps.outputs.registryName
+    //containerRegistryName: containerApps.outputs.registryName
+    containerRegistryName: 'crgetstartwithaiagents'
     projectConnectionString: projectConnectionString
     agentDeploymentName: agentDeploymentName
     searchConnectionName: searchConnectionName

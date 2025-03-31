@@ -11,9 +11,6 @@ services:
     project: ./src
     language: py
     host: containerapp
-    docker:
-      image: api-and-frontend
-      remoteBuild: true
 
 hooks:
   postprovision:
