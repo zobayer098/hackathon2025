@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.34.44.8038",
-      "templateHash": "7202009530597557735"
+      "templateHash": "14617643531377237455"
     }
   },
   "parameters": {
@@ -82,13 +82,6 @@
       "defaultValue": "",
       "metadata": {
         "description": "The AI Services connection name. If ommited will use a default value"
-      }
-    },
-    "containerRegistryName": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "The Azure Container Registry resource name. If ommited will be generated"
       }
     },
     "keyVaultName": {
@@ -267,10 +260,6 @@
       "metadata": {
         "description": "Random seed to be used during generation of new resources suffixes."
       }
-    },
-    "apiAppExists": {
-      "type": "bool",
-      "defaultValue": false
     }
   },
   "variables": {
@@ -448,7 +437,6 @@
     "aiDeployments": "[concat(variables('aiChatModel'), if(parameters('useSearchService'), variables('aiEmbeddingModel'), createArray()))]",
     "logAnalyticsWorkspaceResolvedName": "[if(not(parameters('useApplicationInsights')), '', if(not(empty(parameters('logAnalyticsWorkspaceName'))), parameters('logAnalyticsWorkspaceName'), format('{0}{1}', variables('abbrs').operationalInsightsWorkspaces, variables('resourceToken'))))]",
     "resolvedSearchServiceName": "[if(not(parameters('useSearchService')), '', if(not(empty(parameters('searchServiceName'))), parameters('searchServiceName'), format('{0}{1}', variables('abbrs').searchSearchServices, variables('resourceToken'))))]",
-    "containerRegistryResolvedName": "[if(not(parameters('useContainerRegistry')), '', if(not(empty(parameters('containerRegistryName'))), parameters('containerRegistryName'), format('{0}{1}', variables('abbrs').containerRegistryRegistries, variables('resourceToken'))))]",
     "resolvedApplicationInsightsName": "[if(or(not(parameters('useApplicationInsights')), not(empty(parameters('aiExistingProjectConnectionString')))), '', if(not(empty(parameters('applicationInsightsName'))), parameters('applicationInsightsName'), format('{0}{1}', variables('abbrs').insightsComponents, variables('resourceToken'))))]"
   },
   "resources": [
@@ -492,9 +480,6 @@
             "value": "[variables('logAnalyticsWorkspaceResolvedName')]"
           },
           "applicationInsightsName": "[if(not(parameters('useApplicationInsights')), createObject('value', ''), if(not(empty(parameters('applicationInsightsName'))), createObject('value', parameters('applicationInsightsName')), createObject('value', format('{0}{1}', variables('abbrs').insightsComponents, variables('resourceToken')))))]",
-          "containerRegistryName": {
-            "value": "[variables('containerRegistryResolvedName')]"
-          },
           "searchServiceName": {
             "value": "[variables('resolvedSearchServiceName')]"
           },
@@ -4142,10 +4127,12 @@
           "tags": {
             "value": "[variables('tags')]"
           },
+          "containerRegistryName": {
+            "value": "[format('{0}{1}', variables('abbrs').containerRegistryRegistries, variables('resourceToken'))]"
+          },
           "containerAppsEnvironmentName": {
             "value": "[format('containerapps-env-{0}', variables('resourceToken'))]"
           },
-          "containerRegistryName": "[if(empty(parameters('aiExistingProjectConnectionString')), createObject('value', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.containerRegistryName.value), createObject('value', variables('containerRegistryResolvedName')))]",
           "logAnalyticsWorkspaceName": "[if(empty(parameters('aiExistingProjectConnectionString')), createObject('value', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.logAnalyticsWorkspaceName.value), createObject('value', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'logAnalytics'), '2022-09-01').outputs.name.value))]"
         },
         "template": {
@@ -4633,9 +4620,6 @@
           "containerAppsEnvironmentName": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'container-apps'), '2022-09-01').outputs.environmentName.value]"
           },
-          "containerRegistryName": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'container-apps'), '2022-09-01').outputs.registryName.value]"
-          },
           "projectConnectionString": "[if(empty(if(and(and(empty(parameters('aiExistingProjectConnectionString')), not(empty(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.discoveryUrl.value))), contains(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.discoveryUrl.value, '/')), split(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.discoveryUrl.value, '/')[2], '')), createObject('value', parameters('aiExistingProjectConnectionString')), createObject('value', format('{0};{1};{2};{3}', if(and(and(empty(parameters('aiExistingProjectConnectionString')), not(empty(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.discoveryUrl.value))), contains(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.discoveryUrl.value, '/')), split(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'ai'), '2022-09-01').outputs.discoveryUrl.value, '/')[2], ''), subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))), variables('projectName'))))]",
           "agentDeploymentName": {
             "value": "[parameters('agentDeploymentName')]"
@@ -4658,9 +4642,6 @@
           },
           "agentID": {
             "value": "[variables('agentID')]"
-          },
-          "exists": {
-            "value": "[parameters('apiAppExists')]"
           }
         },
         "template": {
@@ -4670,7 +4651,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.34.44.8038",
-              "templateHash": "14954821991030280750"
+              "templateHash": "10391931731888839345"
             }
           },
           "parameters": {
@@ -4691,15 +4672,9 @@
             "containerAppsEnvironmentName": {
               "type": "string"
             },
-            "containerRegistryName": {
-              "type": "string"
-            },
             "serviceName": {
               "type": "string",
               "defaultValue": "api"
-            },
-            "exists": {
-              "type": "bool"
             },
             "projectConnectionString": {
               "type": "string"
@@ -4761,14 +4736,8 @@
                   "identityName": {
                     "value": "[parameters('identityName')]"
                   },
-                  "exists": {
-                    "value": "[parameters('exists')]"
-                  },
                   "containerAppsEnvironmentName": {
                     "value": "[parameters('containerAppsEnvironmentName')]"
-                  },
-                  "containerRegistryName": {
-                    "value": "[parameters('containerRegistryName')]"
                   },
                   "targetPort": {
                     "value": 50505
@@ -4829,7 +4798,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.34.44.8038",
-                      "templateHash": "1142675002948692193"
+                      "templateHash": "9021322214376180752"
                     },
                     "description": "Creates or updates an existing Azure Container App."
                   },
@@ -4888,20 +4857,6 @@
                         "description": "The name of the container"
                       }
                     },
-                    "containerRegistryName": {
-                      "type": "string",
-                      "defaultValue": "",
-                      "metadata": {
-                        "description": "The name of the container registry"
-                      }
-                    },
-                    "containerRegistryHostSuffix": {
-                      "type": "string",
-                      "defaultValue": "azurecr.io",
-                      "metadata": {
-                        "description": "Hostname suffix for container registry. Set when deploying to sovereign clouds"
-                      }
-                    },
                     "daprAppProtocol": {
                       "type": "string",
                       "defaultValue": "http",
@@ -4925,13 +4880,6 @@
                       "defaultValue": "[parameters('containerName')]",
                       "metadata": {
                         "description": "The Dapr app ID"
-                      }
-                    },
-                    "exists": {
-                      "type": "bool",
-                      "defaultValue": false,
-                      "metadata": {
-                        "description": "Specifies if the resource already exists"
                       }
                     },
                     "ingressEnabled": {
@@ -4958,13 +4906,6 @@
                       "defaultValue": "",
                       "metadata": {
                         "description": "The name of the user-assigned identity"
-                      }
-                    },
-                    "imageName": {
-                      "type": "string",
-                      "defaultValue": "",
-                      "metadata": {
-                        "description": "The name of the container image"
                       }
                     },
                     "secrets": {
@@ -5038,12 +4979,6 @@
                           "containerAppsEnvironmentName": {
                             "value": "[parameters('containerAppsEnvironmentName')]"
                           },
-                          "containerRegistryName": {
-                            "value": "[parameters('containerRegistryName')]"
-                          },
-                          "containerRegistryHostSuffix": {
-                            "value": "[parameters('containerRegistryHostSuffix')]"
-                          },
                           "containerCpuCoreCount": {
                             "value": "[parameters('containerCpuCoreCount')]"
                           },
@@ -5074,7 +5009,6 @@
                           "env": {
                             "value": "[parameters('env')]"
                           },
-                          "imageName": "[if(not(empty(parameters('imageName'))), createObject('value', parameters('imageName')), if(parameters('exists'), createObject('value', reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2023-05-02-preview').template.containers[0].image), createObject('value', '')))]",
                           "targetPort": {
                             "value": "[parameters('targetPort')]"
                           },
@@ -5089,7 +5023,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.34.44.8038",
-                              "templateHash": "11938328258258588737"
+                              "templateHash": "12269701033497756739"
                             },
                             "description": "Creates a container app in an Azure Container App environment."
                           },
@@ -5154,20 +5088,6 @@
                                 "description": "The name of the container"
                               }
                             },
-                            "containerRegistryName": {
-                              "type": "string",
-                              "defaultValue": "",
-                              "metadata": {
-                                "description": "The name of the container registry"
-                              }
-                            },
-                            "containerRegistryHostSuffix": {
-                              "type": "string",
-                              "defaultValue": "azurecr.io",
-                              "metadata": {
-                                "description": "Hostname suffix for container registry. Set when deploying to sovereign clouds"
-                              }
-                            },
                             "daprAppProtocol": {
                               "type": "string",
                               "defaultValue": "http",
@@ -5226,13 +5146,6 @@
                                 "description": "The type of identity for the resource"
                               }
                             },
-                            "imageName": {
-                              "type": "string",
-                              "defaultValue": "",
-                              "metadata": {
-                                "description": "The name of the container image"
-                              }
-                            },
                             "ingressEnabled": {
                               "type": "bool",
                               "defaultValue": true,
@@ -5274,7 +5187,6 @@
                             }
                           },
                           "variables": {
-                            "usePrivateRegistry": "[and(not(empty(parameters('identityName'))), not(empty(parameters('containerRegistryName'))))]",
                             "normalizedIdentityType": "[if(not(empty(parameters('identityName'))), 'UserAssigned', parameters('identityType'))]"
                           },
                           "resources": [
@@ -5305,13 +5217,13 @@
                                   "ingress": "[if(parameters('ingressEnabled'), createObject('external', parameters('external'), 'targetPort', parameters('targetPort'), 'transport', 'auto', 'corsPolicy', createObject('allowedOrigins', union(createArray('https://portal.azure.com', 'https://ms.portal.azure.com'), parameters('allowedOrigins')))), null())]",
                                   "dapr": "[if(parameters('daprEnabled'), createObject('enabled', true(), 'appId', parameters('daprAppId'), 'appProtocol', parameters('daprAppProtocol'), 'appPort', if(parameters('ingressEnabled'), parameters('targetPort'), 0)), createObject('enabled', false()))]",
                                   "service": "[if(not(empty(parameters('serviceType'))), createObject('type', parameters('serviceType')), null())]",
-                                  "registries": "[if(variables('usePrivateRegistry'), createArray(createObject('server', format('{0}.{1}', parameters('containerRegistryName'), parameters('containerRegistryHostSuffix')), 'identity', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')))), createArray())]"
+                                  "registries": []
                                 },
                                 "template": {
                                   "serviceBinds": "[if(not(empty(parameters('serviceBinds'))), parameters('serviceBinds'), null())]",
                                   "containers": [
                                     {
-                                      "image": "[if(not(empty(parameters('imageName'))), parameters('imageName'), 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest')]",
+                                      "image": "crgetstartwithaiagents.azurecr.io/get-start-with-ai-agents:get-start-with-ai-agents-latest",
                                       "name": "[parameters('containerName')]",
                                       "env": "[parameters('env')]",
                                       "resources": {
@@ -5325,63 +5237,6 @@
                                     "maxReplicas": "[parameters('containerMaxReplicas')]"
                                   }
                                 }
-                              },
-                              "dependsOn": [
-                                "[resourceId('Microsoft.Resources/deployments', format('{0}-registry-access', deployment().name))]"
-                              ]
-                            },
-                            {
-                              "condition": "[variables('usePrivateRegistry')]",
-                              "type": "Microsoft.Resources/deployments",
-                              "apiVersion": "2022-09-01",
-                              "name": "[format('{0}-registry-access', deployment().name)]",
-                              "properties": {
-                                "expressionEvaluationOptions": {
-                                  "scope": "inner"
-                                },
-                                "mode": "Incremental",
-                                "parameters": {
-                                  "containerRegistryName": {
-                                    "value": "[parameters('containerRegistryName')]"
-                                  },
-                                  "principalId": "[if(variables('usePrivateRegistry'), createObject('value', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')), '2023-01-31').principalId), createObject('value', ''))]"
-                                },
-                                "template": {
-                                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                                  "contentVersion": "1.0.0.0",
-                                  "metadata": {
-                                    "_generator": {
-                                      "name": "bicep",
-                                      "version": "0.34.44.8038",
-                                      "templateHash": "13289176905057751552"
-                                    },
-                                    "description": "Assigns ACR Pull permissions to access an Azure Container Registry."
-                                  },
-                                  "parameters": {
-                                    "containerRegistryName": {
-                                      "type": "string"
-                                    },
-                                    "principalId": {
-                                      "type": "string"
-                                    }
-                                  },
-                                  "variables": {
-                                    "acrPullRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]"
-                                  },
-                                  "resources": [
-                                    {
-                                      "type": "Microsoft.Authorization/roleAssignments",
-                                      "apiVersion": "2022-04-01",
-                                      "scope": "[format('Microsoft.ContainerRegistry/registries/{0}', parameters('containerRegistryName'))]",
-                                      "name": "[guid(subscription().id, resourceGroup().id, parameters('principalId'), variables('acrPullRole'))]",
-                                      "properties": {
-                                        "roleDefinitionId": "[variables('acrPullRole')]",
-                                        "principalType": "ServicePrincipal",
-                                        "principalId": "[parameters('principalId')]"
-                                      }
-                                    }
-                                  ]
-                                }
                               }
                             }
                           ],
@@ -5393,10 +5248,6 @@
                             "identityPrincipalId": {
                               "type": "string",
                               "value": "[if(equals(variables('normalizedIdentityType'), 'None'), '', if(empty(parameters('identityName')), reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2023-05-02-preview', 'full').identity.principalId, reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('identityName')), '2023-01-31').principalId))]"
-                            },
-                            "imageName": {
-                              "type": "string",
-                              "value": "[parameters('imageName')]"
                             },
                             "name": {
                               "type": "string",
@@ -5419,10 +5270,6 @@
                     "defaultDomain": {
                       "type": "string",
                       "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}-update', deployment().name)), '2022-09-01').outputs.defaultDomain.value]"
-                    },
-                    "imageName": {
-                      "type": "string",
-                      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}-update', deployment().name)), '2022-09-01').outputs.imageName.value]"
                     },
                     "name": {
                       "type": "string",
@@ -5452,10 +5299,6 @@
             "SERVICE_API_URI": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}-container-app-module', variables('module_name'))), '2022-09-01').outputs.uri.value]"
-            },
-            "SERVICE_API_IMAGE_NAME": {
-              "type": "string",
-              "value": "[reference(resourceId('Microsoft.Resources/deployments', format('{0}-container-app-module', variables('module_name'))), '2022-09-01').outputs.imageName.value]"
             }
           }
         }
@@ -6357,10 +6200,6 @@
     "SERVICE_API_URI": {
       "type": "string",
       "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'api'), '2022-09-01').outputs.SERVICE_API_URI.value]"
-    },
-    "SERVICE_API_IMAGE_NAME": {
-      "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'api'), '2022-09-01').outputs.SERVICE_API_IMAGE_NAME.value]"
     },
     "SERVICE_API_ENDPOINTS": {
       "type": "array",
