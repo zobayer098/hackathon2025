@@ -25,8 +25,8 @@ The app code runs in Azure Container apps to process the user input and generate
 
 ### Quick Deploy
 
-| [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Azure-Samples/get-started-with-ai-agents) | [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure-Samples/get-started-with-ai-agents) | [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure-Samples%2Fget-started-with-ai-agents%2Frefs%2Fheads%2Fhowie%2Ffix-deploy-to-azure%2Finfra%2Fmain.json) |
-|---|---|---|
+| [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Azure-Samples/get-started-with-ai-agents) | [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure-Samples/get-started-with-ai-agents) |
+|---|---|
 
 Github Codespaces and Dev Containers both allow you to download and deploy the code for development. You can also continue with local development. Once you have selected your environment, follow the instructions below to customize and deploy your solution.    
 
@@ -246,7 +246,7 @@ Once you've opened the project in [Codespaces](#github-codespaces) or in [Dev Co
     ```
     ⚠️ If you do not increase your quota, you may encounter rate limit issues. If needed, you can increase the quota after deployment by editing your model in the Models and Endpoints tab of the [Azure AI Foundry Portal](https://ai.azure.com/).
 
-3. Provision and deploy all the resources by running the following in get-started-with-ai-agents directory:
+3. Provision and deploy all the resources with public docker image `azdtemplate.azurecr.io/get-start-with-ai-agents:latest` by running the following in get-started-with-ai-agents directory:
 
     ```shell
     azd up
@@ -273,20 +273,10 @@ Once you've opened the project in [Codespaces](#github-codespaces) or in [Dev Co
     * In the [Azure Portal](https://portal.azure.com/), navigate to your environment's resource group. The name will be `rg-[your environment name]`. Here, you should see your container app, storage account, and all of the other [resources](#resources) that are created in the deployment.
     * In the [Azure AI Foundry Portal](https://ai.azure.com/), select your project. If you navigate to the Assistants tab, you should be able to view your new assistant, named `agent-template-assistant`. If you navigate to the Models and Endpoints tab, you should see your AI Services connection with your model deployments. 
 
-7. (Optional) If you make further modification to the app code, you can deploy the updated version with:
+7. (Optional) You can use a local development server to test app changes locally. To do so, follow the steps in [local deployment server](#local-development-server) after your app is deployed.
 
-    ```shell
-    azd deploy
-    ```
-    You can get more detailed output with the ```--debug``` parameter.
-    ```shell
-    azd deploy --debug
-    ```
-    >**Important:**
-    >
-    >Check carefully for any errors during deployment and the startup phase of the Azure Container App. If the container fails to start correctly after deployment, the application changes you made will not take effect, and Azure Container Apps will continue serving requests from the previous stable revision.
+8. (Optional) Follow this [tutorial](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-tutorial-quick-task) to build your changes into a Docker image and deploy to Azure Container App.
 
-8. (Optional) You can use a local development server to test app changes locally. To do so, follow the steps in [local deployment server](#local-development-server) after your app is deployed.
 
 ## Resource Clean-up
 
