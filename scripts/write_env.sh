@@ -19,5 +19,5 @@ echo "AZURE_AI_AGENT_NAME=$(azd env get-value AZURE_AI_AGENT_NAME)" >> $ENV_FILE
 echo "AZURE_TENANT_ID=$(azd env get-value AZURE_TENANT_ID)" >> $ENV_FILE_PATH
 
 echo "Web app URL:"
-echo "$(azd env get-value SERVICE_API_URI)"
+echo -e "\033[0;36m $(azd env get-value SERVICE_API_URI)"
 exit 0
