@@ -39,8 +39,6 @@ param applicationInsightsName string = ''
 param aiServicesName string = ''
 @description('The AI Services connection name. If ommited will use a default value')
 param aiServicesConnectionName string = ''
-@description('The Azure Container Registry resource name. If ommited will be generated')
-param containerRegistryName string = ''
 @description('The Azure Key Vault resource name. If ommited will be generated')
 param keyVaultName string = ''
 @description('The Azure Search resource name. If ommited will be generated')
@@ -154,8 +152,6 @@ var aiDeployments = concat(
   aiChatModel,
   useSearchService ? aiEmbeddingModel : [])
 
-//for container and app api
-param apiAppExists bool = false
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -173,10 +169,6 @@ var logAnalyticsWorkspaceResolvedName = !useApplicationInsights
 var resolvedSearchServiceName = !useSearchService
   ? ''
   : !empty(searchServiceName) ? searchServiceName : '${abbrs.searchSearchServices}${resourceToken}'
-
-var containerRegistryResolvedName = !useContainerRegistry
-  ? ''
-  : !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
 
 module ai 'core/host/ai-environment.bicep' = if (empty(aiExistingProjectConnectionString)) {
   name: 'ai'
@@ -197,7 +189,6 @@ module ai 'core/host/ai-environment.bicep' = if (empty(aiExistingProjectConnecti
     applicationInsightsName: !useApplicationInsights
       ? ''
       : !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
-    containerRegistryName: containerRegistryResolvedName
     searchServiceName: resolvedSearchServiceName
     searchConnectionName: !useSearchService
       ? ''
@@ -260,10 +251,8 @@ module containerApps 'core/host/container-apps.bicep' = {
     name: 'app'
     location: location
     tags: tags
+    containerRegistryName: '${abbrs.containerRegistryRegistries}${resourceToken}'
     containerAppsEnvironmentName: 'containerapps-env-${resourceToken}'
-    containerRegistryName: empty(aiExistingProjectConnectionString)
-      ? ai.outputs.containerRegistryName
-      : containerRegistryResolvedName
     logAnalyticsWorkspaceName: empty(aiExistingProjectConnectionString)
       ? ai.outputs.logAnalyticsWorkspaceName
       : logAnalytics.outputs.name
@@ -283,7 +272,6 @@ module api 'api.bicep' = {
     identityName: '${abbrs.managedIdentityUserAssignedIdentities}api-${resourceToken}'
     containerAppsEnvironmentName: containerApps.outputs.environmentName
     //containerRegistryName: containerApps.outputs.registryName
-    containerRegistryName: 'crgetstartwithaiagents'
     projectConnectionString: projectConnectionString
     agentDeploymentName: agentDeploymentName
     searchConnectionName: searchConnectionName
@@ -293,7 +281,7 @@ module api 'api.bicep' = {
     embeddingDeploymentDimensions: embeddingDeploymentDimensions
     agentName: agentName
     agentID: agentID
-    exists: apiAppExists
+    projectName: projectName
   }
 }
 
@@ -426,5 +414,4 @@ output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerApps.outputs.registry
 output SERVICE_API_IDENTITY_PRINCIPAL_ID string = api.outputs.SERVICE_API_IDENTITY_PRINCIPAL_ID
 output SERVICE_API_NAME string = api.outputs.SERVICE_API_NAME
 output SERVICE_API_URI string = api.outputs.SERVICE_API_URI
-output SERVICE_API_IMAGE_NAME string = api.outputs.SERVICE_API_IMAGE_NAME
 output SERVICE_API_ENDPOINTS array = ['${api.outputs.SERVICE_API_URI}']

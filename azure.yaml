@@ -2,15 +2,9 @@
 # TODO: do we need hooks? 
 # TODO: do we need all of the variables?
 
-name: bogus
+name: azd-get-started-with-ai-agents
 metadata:
-  template: bogus@0.0.1-beta
-
-services:
-  api_and_frontend:
-    project: ./src
-    language: py
-    host: containerapp
+  template: azd-get-started-with-ai-agents@0.0.1-beta
 
 hooks:
   postprovision:
