@@ -104,7 +104,6 @@ param embedDeploymentSku string = 'Standard'
 // https://learn.microsoft.com/azure/ai-services/openai/quotas-limits
 param embedDeploymentCapacity int = 30
 
-param useContainerRegistry bool = true
 param useApplicationInsights bool = true
 @description('Do we want to use the Azure AI Search')
 param useSearchService bool = false
@@ -251,7 +250,6 @@ module containerApps 'core/host/container-apps.bicep' = {
     name: 'app'
     location: location
     tags: tags
-    containerRegistryName: '${abbrs.containerRegistryRegistries}${resourceToken}'
     containerAppsEnvironmentName: 'containerapps-env-${resourceToken}'
     logAnalyticsWorkspaceName: empty(aiExistingProjectConnectionString)
       ? ai.outputs.logAnalyticsWorkspaceName
@@ -267,11 +265,8 @@ module api 'api.bicep' = {
     name: 'ca-api-${resourceToken}'
     location: location
     tags: tags
-    serviceName: 'api_and_frontend'    
-    // serviceName: 'get-started-with-ai-agents'
     identityName: '${abbrs.managedIdentityUserAssignedIdentities}api-${resourceToken}'
     containerAppsEnvironmentName: containerApps.outputs.environmentName
-    //containerRegistryName: containerApps.outputs.registryName
     projectConnectionString: projectConnectionString
     agentDeploymentName: agentDeploymentName
     searchConnectionName: searchConnectionName
@@ -409,8 +404,6 @@ output AZURE_AI_AGENT_ID string = agentID
 
 // Outputs required by azd for ACA
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerApps.outputs.environmentName
-output AZURE_CONTAINER_REGISTRY_NAME string = containerApps.outputs.registryName
-output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerApps.outputs.registryLoginServer
 output SERVICE_API_IDENTITY_PRINCIPAL_ID string = api.outputs.SERVICE_API_IDENTITY_PRINCIPAL_ID
 output SERVICE_API_NAME string = api.outputs.SERVICE_API_NAME
 output SERVICE_API_URI string = api.outputs.SERVICE_API_URI
