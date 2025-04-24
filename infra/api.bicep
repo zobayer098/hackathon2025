@@ -26,7 +26,7 @@ var env = [
     value: apiIdentity.properties.clientId
   }
   {
-    name: 'AZURE_AIPROJECT_CONNECTION_STRING'
+    name: 'AZURE_EXISTING_AIPROJECT_CONNECTION_STRING'
     value: projectConnectionString
   }
   {
@@ -34,7 +34,7 @@ var env = [
     value: agentName
   }
   {
-    name: 'AZURE_AI_AGENT_ID'
+    name: 'AZURE_EXISTING_AGENT_ID'
     value: agentID
   }
   {

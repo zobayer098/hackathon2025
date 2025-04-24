@@ -62,8 +62,10 @@ param logAnalyticsWorkspaceName string = ''
 param agentModelFormat string = 'OpenAI'
 @description('Name of agent to deploy')
 param agentName string = 'agent-template-assistant'
-@description('ID of agent to deploy')
+@description('(Deprecated) ID of agent to deploy')
 param aiAgentID string = ''
+@description('ID of the existing agent')
+param azureExistingAgentId string = ''
 @description('Name of the chat model to deploy')
 param agentModelName string = 'gpt-4o-mini'
 @description('Name of the model deployment')
@@ -120,7 +122,8 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var projectName = !empty(aiProjectName) ? aiProjectName : 'ai-project-${resourceToken}'
 var tags = { 'azd-env-name': environmentName }
 
-var agentID = !empty(aiAgentID) ? aiAgentID : ''
+var tempAgentID = !empty(aiAgentID) ? aiAgentID : ''
+var agentID = !empty(azureExistingAgentId) ? azureExistingAgentId : tempAgentID
 
 var aiChatModel = [
   {
@@ -396,7 +399,7 @@ output AZURE_RESOURCE_GROUP string = rg.name
 
 // Outputs required for local development server
 output AZURE_TENANT_ID string = tenant().tenantId
-output AZURE_AIPROJECT_CONNECTION_STRING string = projectConnectionString
+output AZURE_EXISTING_AIPROJECT_CONNECTION_STRING string = projectConnectionString
 output AZURE_AI_AGENT_DEPLOYMENT_NAME string = agentDeploymentName
 output AZURE_AI_SEARCH_CONNECTION_NAME string = searchConnectionName
 output AZURE_AI_EMBED_DEPLOYMENT_NAME string = embeddingDeploymentName
@@ -404,7 +407,7 @@ output AZURE_AI_SEARCH_INDEX_NAME string = aiSearchIndexName
 output AZURE_AI_SEARCH_ENDPOINT string = searchServiceEndpoint
 output AZURE_AI_EMBED_DIMENSIONS string = embeddingDeploymentDimensions
 output AZURE_AI_AGENT_NAME string = agentName
-output AZURE_AI_AGENT_ID string = agentID
+output AZURE_EXISTING_AGENT_ID string = agentID
 
 // Outputs required by azd for ACA
 output AZURE_CONTAINER_ENVIRONMENT_NAME string = containerApps.outputs.environmentName
