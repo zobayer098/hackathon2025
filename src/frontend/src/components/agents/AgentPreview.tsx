@@ -18,15 +18,54 @@ import styles from "./AgentPreview.module.css";
 
 interface IAgent {
   id: string;
+  object: string;
+  created_at: number;
   name: string;
-  description?: string;
-  logo?: string;
+  description?: string | null;
+  model: string;
+  instructions?: string;
+  tools?: Array<{ type: string }>;
+  top_p?: number;
+  temperature?: number;
+  tool_resources?: {
+    file_search?: {
+      vector_store_ids?: string[];
+    };
+    [key: string]: any;
+  };
+  metadata?: Record<string, any>;
+  response_format?: "auto" | string;
 }
 
 interface IAgentPreviewProps {
   resourceId: string;
   agentDetails: IAgent;
 }
+
+interface IAnnotation {
+  file_name?: string;
+  text: string;
+  start_index: number;
+  end_index: number;
+}
+
+const preprocessContent = (content: string, annotations?: IAnnotation[]): string => {
+    if (annotations) {
+        // Process annotations in reverse order so that the indexes remain valid
+        annotations.slice().reverse().forEach(annotation => {
+            // If there's a file_name, show it (wrapped in brackets), otherwise fall back to annotation.text.
+            const linkText = annotation.file_name
+                ? `[${annotation.file_name}]`
+                : annotation.text;
+
+            content = content.slice(0, annotation.start_index) +
+                linkText +
+                content.slice(annotation.end_index);
+        });
+    }
+    return content;
+};
+
 
 export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
@@ -48,7 +87,8 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
         const json_response: Array<{
           role: string;
           content: string;
-          annotations?: any[];
+          created_at: string;
+          annotations?: IAnnotation[];
         }> = await response.json();
 
         // It's generally better to build the new list and set state once
@@ -61,14 +101,15 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
               id: ``,
               content: entry.content,
               role: "user",
-              more: { time: new Date().toISOString() }, // Or use timestamp from history if available
+              more: { time: entry.created_at }, // Or use timestamp from history if available
             });
           } else {
             historyMessages.push({
               id: `assistant-hist-${Date.now()}-${Math.random()}`, // Ensure unique ID
-              content: entry.content,
+              content: preprocessContent(entry.content, entry.annotations),
               role: "assistant", // Assuming 'assistant' role for non-user
               isAnswer: true, // Assuming this property for assistant messages
+              more: { time: entry.created_at }, // Or use timestamp from history if available
               // annotations: entry.annotations, // If you plan to use annotations
             });
           }
@@ -173,10 +214,6 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
       } else {
         console.error("[ChatClient] Fetch failed:", error);
       }
-    } finally {
-      // Reset the controller once the request is finished or cancelled
-      //TODO
-      // this.abortController = null;
     }
   };
 
@@ -187,6 +224,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
     let accumulatedContent = "";
     let isStreaming = true;
     let buffer = "";
+    let annotations: IAnnotation[] = [];
 
     // Create a reader for the SSE stream
     const reader = stream.getReader();
@@ -267,6 +305,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
               if (data.type === "completed_message") {
                 clearAssistantMessage(chatItem);
                 accumulatedContent = data.content;
+                annotations = data.annotations;
                 isStreaming = false;
                 console.log(
                   "[ChatClient] Received completed message:",
@@ -285,7 +324,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
               }
 
               // Update the UI with the accumulated content
-              appendAssistantMessage(chatItem, accumulatedContent, isStreaming);
+              appendAssistantMessage(chatItem, accumulatedContent, isStreaming, annotations);
             }
           }
 
@@ -301,7 +340,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
   };
 
   const createAssistantMessageDiv: () => IChatItem = () => {
-    var item = { id: "unknown", content: "", isAnswer: true };
+    var item = { id: "unknown", content: "", isAnswer: true, more: { time: new Date().toISOString() } };
     setMessageList((prev) => [...prev, item]);
     return item;
   };
@@ -309,12 +348,12 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
   const appendAssistantMessage = (
     chatItem: IChatItem,
     accumulatedContent: string,
-    isStreaming: boolean
+    isStreaming: boolean,
+    annotations?: IAnnotation[]
   ) => {
     try {
       // Preprocess content to convert citations to links using the updated annotation data
-      const preprocessedContent = accumulatedContent;
-      // Convert the accumulated content to HTML using markdown-it
+      const preprocessedContent = preprocessContent(accumulatedContent, annotations);      // Convert the accumulated content to HTML using markdown-it
       let htmlContent = preprocessedContent;
       if (!chatItem) {
         throw new Error("Message content div not found in the template.");
@@ -335,7 +374,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
       if (!isStreaming) {
         requestAnimationFrame(() => {
           // TODO
-          // this.scrollToBottom();
+          // scrollToBottom();
         });
       }
     } catch (error) {
@@ -410,7 +449,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
               <AgentIcon
                 alt=""
                 iconClassName={styles.agentIcon}
-                iconName={agentDetails.logo}
+                iconName={agentDetails.metadata?.logo}
               />
               <Body1 className={styles.agentName}>{agentDetails.name}</Body1>
             </>
@@ -446,7 +485,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
                 <AgentIcon
                   alt=""
                   iconClassName={styles.emptyStateAgentIcon}
-                  iconName={agentDetails.logo}
+                  iconName={agentDetails.metadata?.logo}
                 />
                 <Caption1 className={styles.agentName}>
                   {agentDetails.name}
@@ -456,7 +495,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
             )}
             <AgentPreviewChatBot
               agentName={agentDetails.name}
-              agentLogo={agentDetails.logo}
+              agentLogo={agentDetails.metadata?.logo}
               chatContext={chatContext}
             />
           </>
