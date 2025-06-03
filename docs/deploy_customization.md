@@ -59,9 +59,9 @@ azd env set AZURE_AI_AGENT_MODEL_VERSION 2024-07-18
 
 ### Setting capacity and deployment SKU
 
-For quota regions, you may find yourself needing to modify the default capacity and deployment SKU. The default tokens per minute deployed in this template is 50,000. 
+For quota regions, you may find yourself needing to modify the default capacity and deployment SKU using environment variables as below. The default tokens per minute deployed in this template is 80,000 for agent model and 50,000 for the embedding model that is enough for all operations.  If the region has quota less the these numbers, you will be prompt to input a lower capacity up to the available limit.
 
-Change the capacity (in thousands of tokens per minute) of the agent deployment:
+Change the default capacity (in thousands of tokens per minute) of the agent deployment:
 
 ```shell
 azd env set AZURE_AI_AGENT_DEPLOYMENT_CAPACITY 50
@@ -73,7 +73,7 @@ Change the SKU of the agent deployment:
 azd env set AZURE_AI_AGENT_DEPLOYMENT_SKU Standard
 ```
 
-Change the capacity (in thousands of tokens per minute) of the embeddings deployment:
+Change the default capacity (in thousands of tokens per minute) of the embeddings deployment:
 
 ```shell
 azd env set AZURE_AI_EMBED_DEPLOYMENT_CAPACITY 50
