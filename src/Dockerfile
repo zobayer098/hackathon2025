@@ -23,6 +23,12 @@ WORKDIR /code/frontend
 RUN pnpm install \
     && pnpm build
 
+
+RUN apt-get purge -y krb5-user libkrb5-3 libkrb5support0 libgssapi-krb5-2
+RUN apt-get purge -y perl
+RUN apt-get update && apt-get install -y libcap2
+
+
 # Return to backend directory
 WORKDIR /code
 
