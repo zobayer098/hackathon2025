@@ -4,15 +4,18 @@ import {
   Button,
   Caption1,
   Spinner,
-  Title2,
+  Title3,
 } from "@fluentui/react-components";
 import { ChatRegular, MoreHorizontalRegular } from "@fluentui/react-icons";
+import clsx from "clsx";
 
 import { AgentIcon } from "./AgentIcon";
 import { SettingsPanel } from "../core/SettingsPanel";
 import { AgentPreviewChatBot } from "./AgentPreviewChatBot";
 import { MenuButton } from "../core/MenuButton/MenuButton";
 import { IChatItem } from "./chatbot/types";
+import { Waves } from "./Waves";
+import { BuiltWithBadge } from "./BuiltWithBadge";
 
 import styles from "./AgentPreview.module.css";
 
@@ -49,23 +52,29 @@ interface IAnnotation {
   end_index: number;
 }
 
-const preprocessContent = (content: string, annotations?: IAnnotation[]): string => {
-    if (annotations) {
-        // Process annotations in reverse order so that the indexes remain valid
-        annotations.slice().reverse().forEach(annotation => {
-            // If there's a file_name, show it (wrapped in brackets), otherwise fall back to annotation.text.
-            const linkText = annotation.file_name
-                ? `[${annotation.file_name}]`
-                : annotation.text;
+const preprocessContent = (
+  content: string,
+  annotations?: IAnnotation[]
+): string => {
+  if (annotations) {
+    // Process annotations in reverse order so that the indexes remain valid
+    annotations
+      .slice()
+      .reverse()
+      .forEach((annotation) => {
+        // If there's a file_name, show it (wrapped in brackets), otherwise fall back to annotation.text.
+        const linkText = annotation.file_name
+          ? `[${annotation.file_name}]`
+          : annotation.text;
 
-            content = content.slice(0, annotation.start_index) +
-                linkText +
-                content.slice(annotation.end_index);
-        });
-    }
-    return content;
+        content =
+          content.slice(0, annotation.start_index) +
+          linkText +
+          content.slice(annotation.end_index);
+      });
+  }
+  return content;
 };
-
 
 export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
@@ -174,7 +183,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
       // IMPORTANT: Add credentials: 'include' if server cookies are critical
       // and if your backend is on the same domain or properly configured for cross-site cookies.
 
-      setIsResponding(true);      
+      setIsResponding(true);
       const response = await fetch("/chat", {
         method: "POST",
         headers: {
@@ -231,7 +240,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
     // Create a reader for the SSE stream
     const reader = stream.getReader();
     const decoder = new TextDecoder();
-    
+
     const readStream = async () => {
       while (true) {
         const { done, value } = await reader.read();
@@ -323,7 +332,12 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
               }
 
               // Update the UI with the accumulated content
-              appendAssistantMessage(chatItem, accumulatedContent, isStreaming, annotations);
+              appendAssistantMessage(
+                chatItem,
+                accumulatedContent,
+                isStreaming,
+                annotations
+              );
             }
           }
 
@@ -339,7 +353,12 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
   };
 
   const createAssistantMessageDiv: () => IChatItem = () => {
-    var item = { id: crypto.randomUUID(), content: "", isAnswer: true, more: { time: new Date().toISOString() } };
+    var item = {
+      id: crypto.randomUUID(),
+      content: "",
+      isAnswer: true,
+      more: { time: new Date().toISOString() },
+    };
     setMessageList((prev) => [...prev, item]);
     return item;
   };
@@ -351,7 +370,11 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
   ) => {
     try {
       // Preprocess content to convert citations to links using the updated annotation data
-      const preprocessedContent = preprocessContent(accumulatedContent, annotations);      // Convert the accumulated content to HTML using markdown-it
+      // Convert the accumulated content to HTML using markdown-it
+      const preprocessedContent = preprocessContent(
+        accumulatedContent,
+        annotations
+      ); 
       let htmlContent = preprocessedContent;
       if (!chatItem) {
         throw new Error("Message content div not found in the template.");
@@ -371,7 +394,7 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
           if (lastChild) {
             lastChild.scrollIntoView({ behavior: "smooth", block: "end" });
           }
-       });
+        });
       }
     } catch (error) {
       console.error("Error in appendAssistantMessage:", error);
@@ -426,7 +449,6 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
       },
     },
   ];
-
   const chatContext = useMemo(
     () => ({
       messageList,
@@ -435,31 +457,52 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
     }),
     [messageList, isResponding]
   );
+  const isEmpty = (messageList?.length ?? 0) === 0;
 
   return (
     <div className={styles.container}>
+      <div className={styles.wavesContainer}>
+        <Waves paused={!isEmpty} />
+      </div>
       <div className={styles.topBar}>
         <div className={styles.leftSection}>
-          {messageList.length > 0 && (
-            <>
+          {agentDetails.name ? (
+            <div className={styles.agentIconContainer}>
               <AgentIcon
                 alt=""
                 iconClassName={styles.agentIcon}
                 iconName={agentDetails.metadata?.logo}
               />
-              <Body1 className={styles.agentName}>{agentDetails.name}</Body1>
-            </>
+              <Body1 as="h1" className={styles.agentName}>
+                {agentDetails.name}
+              </Body1>
+            </div>
+          ) : (
+            <div className={styles.agentIconContainer}>
+              <div
+                className={clsx(styles.agentIcon, {
+                  [styles.newAgent]: true,
+                })}
+              />
+              <Body1
+                as="h1"
+                className={clsx(styles.agentName, {
+                  [styles.newAgent]: true,
+                })}
+              >
+                Agent Name
+              </Body1>
+            </div>
           )}
         </div>
         <div className={styles.rightSection}>
-          {" "}
           <Button
             appearance="subtle"
             icon={<ChatRegular aria-hidden={true} />}
             onClick={newThread}
           >
             New Chat
-          </Button>{" "}
+          </Button>
           <MenuButton
             menuButtonText=""
             menuItems={menuItems}
@@ -471,31 +514,36 @@ export function AgentPreview({ agentDetails }: IAgentPreviewProps): ReactNode {
           />
         </div>
       </div>
+
       <div className={styles.content}>
-        {isLoadingChatHistory ? (
-          <Spinner label={"Loading chat history..."} />
-        ) : (
-          <>
-            {messageList.length === 0 && (
-              <div className={styles.emptyChatContainer}>
-                <AgentIcon
-                  alt=""
-                  iconClassName={styles.emptyStateAgentIcon}
-                  iconName={agentDetails.metadata?.logo}
-                />
-                <Caption1 className={styles.agentName}>
-                  {agentDetails.name}
-                </Caption1>
-                <Title2>How can I help you today?</Title2>
-              </div>
-            )}
-            <AgentPreviewChatBot
-              agentName={agentDetails.name}
-              agentLogo={agentDetails.metadata?.logo}
-              chatContext={chatContext}
-            />
-          </>
-        )}
+        <div className={styles.chatbot}>
+          {isLoadingChatHistory ? (
+            <Spinner label={"Loading chat history..."} />
+          ) : (
+            <>
+              {isEmpty && (
+                <div className={styles.emptyChatContainer}>
+                  <AgentIcon
+                    alt=""
+                    iconClassName={styles.emptyStateAgentIcon}
+                    iconName={agentDetails.metadata?.logo}
+                  />
+                  <Caption1 className={styles.agentName}>
+                    {agentDetails.name}
+                  </Caption1>
+                  <Title3>How can I help you today?</Title3>
+                </div>
+              )}
+              <AgentPreviewChatBot
+                agentName={agentDetails.name}
+                agentLogo={agentDetails.metadata?.logo}
+                chatContext={chatContext}
+              />
+            </>
+          )}
+        </div>
+
+        <BuiltWithBadge className={styles.builtWithBadge} />
       </div>
 
       {/* Settings Panel */}
