@@ -20,7 +20,7 @@ AI Foundry offers a number of [built-in evaluators](https://learn.microsoft.com/
 
  In this template, we show how these evaluations can be performed during different phases of your development cycle.
 
-- **Local development**: You can use this [local evaluation script](./evals/evaluate.py) to get performance and evaluation metrics based on a set of [test queries](./evals/eval-queries.json) for a sample set of built-in evaluators.
+- **Local development**: You can use this [local evaluation script](../evals/evaluate.py) to get performance and evaluation metrics based on a set of [test queries](../evals/eval-queries.json) for a sample set of built-in evaluators.
 
   The script reads the following environment variables:
   - `AZURE_EXISTING_AIPROJECT_ENDPOINT`: AI Project endpoint
@@ -36,7 +36,7 @@ AI Foundry offers a number of [built-in evaluators](https://learn.microsoft.com/
   python evals/evaluate.py
   ```
 
-- **Monitoring**: When tracing is enabled, the [application code](./src/api/routes.py) sends an asynchronous evaluation request after processing a thread run, allowing continuous monitoring of your agent. You can view results from the AI Foundry Tracing tab.
+- **Monitoring**: When tracing is enabled, the [application code](../src/api/routes.py) sends an asynchronous evaluation request after processing a thread run, allowing continuous monitoring of your agent. You can view results from the AI Foundry Tracing tab.
     ![Tracing](./images/tracing_eval_screenshot.png)
     Alternatively, you can go to your Application Insights logs for an interactive experience. Here is an example query to see logs on thread runs and related events.
 
@@ -50,13 +50,13 @@ AI Foundry offers a number of [built-in evaluators](https://learn.microsoft.com/
     | project timestamp, thread_run_id, name, success, duration, event_message = message, event_dimensions=customDimensions1
    ```
 
-- **Continuous Integration**: You can try the [AI Agent Evaluation GitHub action](https://github.com/microsoft/ai-agent-evals) using the [sample GitHub workflow](./.github/workflows/ai-evaluation.yaml) in your CI/CD pipeline. This GitHub action runs a set of queries against your agent, performs evaluations with evaluators of your choice, and produce a summary report. It also supports a comparison mode with statistical test, allowing you to iterate agent changes on your production environment with confidence. See [documentation](https://github.com/microsoft/ai-agent-evals) for more details.
+- **Continuous Integration**: You can try the [AI Agent Evaluation GitHub action](https://github.com/microsoft/ai-agent-evals) using the [sample GitHub workflow](../.github/workflows/ai-evaluation.yaml) in your CI/CD pipeline. This GitHub action runs a set of queries against your agent, performs evaluations with evaluators of your choice, and produce a summary report. It also supports a comparison mode with statistical test, allowing you to iterate agent changes on your production environment with confidence. See [documentation](https://github.com/microsoft/ai-agent-evals) for more details.
 
 ## AI Red Teaming Agent
 
 The [AI Red Teaming Agent](https://learn.microsoft.com/azure/ai-foundry/concepts/ai-red-teaming-agent) is a powerful tool designed to help organizations proactively find security and safety risks associated with generative AI systems during design and development of generative AI models and applications.
 
-In this [script](airedteaming/ai_redteaming.py), you will be able to set up an AI Red Teaming Agent to run an automated scan of your agent in this sample. No test dataset or adversarial LLM is needed as the AI Red Teaming Agent will generate all the attack prompts for you.
+In this [script](../airedteaming/ai_redteaming.py), you will be able to set up an AI Red Teaming Agent to run an automated scan of your agent in this sample. No test dataset or adversarial LLM is needed as the AI Red Teaming Agent will generate all the attack prompts for you.
 
 To install required extra package from Azure AI Evaluation SDK and run the script in your local development environment:  
 
