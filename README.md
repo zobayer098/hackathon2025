@@ -4,7 +4,7 @@ The agent leverages the Azure AI Agent service and utilizes file search for know
 
 <div style="text-align:center;">
 
-[**SOLUTION OVERVIEW**](#solution-overview) \| [**GETTING STARTED**](#getting-started)  \|  [**OTHER FEATURES**](#other-features) \| [**RESOURCE CLEAN-UP**](#resource-clean-up) \| [**GUIDANCE**](#guidance) \| [**TROUBLESHOOTING**](#troubleshooting)
+[**SOLUTION OVERVIEW**](#solution-overview) \| [**GETTING STARTED**](#getting-started) \| [**AGENT EVALUATION**](#agent-evaluation) \| [**OTHER FEATURES**](#other-features) \| [**RESOURCE CLEAN-UP**](#resource-clean-up) \| [**GUIDANCE**](#guidance) \| [**TROUBLESHOOTING**](#troubleshooting)
 
 </div>
 
@@ -52,14 +52,60 @@ Here is a screenshot showing the chatting web application with requests and resp
 
 ## Getting Started
 
-### Quick Deploy
+### Quick Start
 
 | [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Azure-Samples/get-started-with-ai-agents) | [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure-Samples/get-started-with-ai-agents) |
 |---|---|
 
-Github Codespaces and Dev Containers both allow you to download and deploy the code for development. You can also continue with local development. Once you have selected your environment, [click here to launch the development and deployment guide](./docs/deployment.md)
+1. Click `Open in GitHub Codespaces` or `Dev Containers` button above
+2. Wait for the environment to load
+3. Run the following commands in the terminal:
+   ```bash
+   azd up
+   ```
+4. Follow the prompts to select your Azure subscription and region
+5. Wait for deployment to complete (5-20 minutes) - you'll get a web app URL when finished
 
+For detailed deployment options and troubleshooting, see the [full deployment guide](./docs/deployment.md).
 **After deployment, try these [sample questions](./docs/sample_questions.md) to test your agent.**
+
+## Agent Evaluation
+
+AI Foundry offers a number of [built-in evaluators](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/agent-evaluate-sdk) to measure the quality, efficiency, risk and safety of your agents. For example, intent resolution, tool call accuracy, and task adherence evaluators are targeted to assess the performance of agent workflow, while content safety evaluator checks for inappropriate content in the responses such as violence or hate.
+
+ In this template, we show how these evaluations can be performed during different phases of your development cycle.
+
+- **Local development**: You can use this [local evaluation script](evals/evaluate.py) to get performance and evaluation metrics based on a set of [test queries](evals/eval-queries.json) for a sample set of built-in evaluators.
+
+  The script reads the following environment variables:
+  - `AZURE_EXISTING_AIPROJECT_ENDPOINT`: AI Project endpoint
+  - `AZURE_EXISTING_AGENT_ID`: AI Agent Id, with fallback logic to look up agent Id by name `AZURE_AI_AGENT_NAME`
+  - `AZURE_AI_AGENT_DEPLOYMENT_NAME`: Deployment model used by the AI-assisted evaluators, with fallback logic to your agent model
+  
+  To install required packages and run the script:  
+
+  ```shell
+  python -m pip install -r src/requirements.txt
+  python -m pip install azure-ai-evaluation
+
+  python evals/evaluate.py
+  ```
+
+- **Monitoring**: When tracing is enabled, the [application code](src/api/routes.py) sends an asynchronous evaluation request after processing a thread run, allowing continuous monitoring of your agent. You can view results from the AI Foundry Tracing tab.
+    ![Tracing](docs/images/tracing_eval_screenshot.png)
+    Alternatively, you can go to your Application Insights logs for an interactive experience. Here is an example query to see logs on thread runs and related events.
+
+    ```kql
+    let thread_run_events = traces
+    | extend thread_run_id = tostring(customDimensions.["gen_ai.thread.run.id"]);
+    dependencies 
+    | extend thread_run_id = tostring(customDimensions.["gen_ai.thread.run.id"])
+    | join kind=leftouter thread_run_events on thread_run_id
+    | where isnotempty(thread_run_id)
+    | project timestamp, thread_run_id, name, success, duration, event_message = message, event_dimensions=customDimensions1
+   ```
+
+- **Continuous Integration**: You can try the [AI Agent Evaluation GitHub action](https://github.com/microsoft/ai-agent-evals) using the [sample GitHub workflow](.github/workflows/ai-evaluation.yaml) in your CI/CD pipeline. This GitHub action runs a set of queries against your agent, performs evaluations with evaluators of your choice, and produce a summary report. It also supports a comparison mode with statistical test, allowing you to iterate agent changes on your production environment with confidence. See [documentation](https://github.com/microsoft/ai-agent-evals) for more details.
 
 
 ## Other Features
