@@ -4,7 +4,7 @@ The agent leverages the Azure AI Agent service and utilizes file search for know
 
 <div style="text-align:center;">
 
-[**SOLUTION OVERVIEW**](#solution-overview) \| [**GETTING STARTED**](#getting-started) \| [**AGENT EVALUATION**](#agent-evaluation) \| [**OTHER FEATURES**](#other-features) \| [**RESOURCE CLEAN-UP**](#resource-clean-up) \| [**GUIDANCE**](#guidance) \| [**TROUBLESHOOTING**](#troubleshooting)
+[**SOLUTION OVERVIEW**](#solution-overview) \| [**GETTING STARTED**](#getting-started) \| [**LOCAL DEVELOPMENT**](#local-development) \| [**OTHER FEATURES**](#other-features) \| [**RESOURCE CLEAN-UP**](#resource-clean-up) \| [**GUIDANCE**](#guidance) \| [**TROUBLESHOOTING**](./docs/troubleshooting.md)
 
 </div>
 
@@ -52,8 +52,6 @@ Here is a screenshot showing the chatting web application with requests and resp
 
 ## Getting Started
 
-### Quick Start
-
 | [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Azure-Samples/get-started-with-ai-agents) | [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure-Samples/get-started-with-ai-agents) |
 |---|---|
 
@@ -69,44 +67,19 @@ Here is a screenshot showing the chatting web application with requests and resp
 For detailed deployment options and troubleshooting, see the [full deployment guide](./docs/deployment.md).
 **After deployment, try these [sample questions](./docs/sample_questions.md) to test your agent.**
 
-## Agent Evaluation
+## Local Development
 
-AI Foundry offers a number of [built-in evaluators](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/agent-evaluate-sdk) to measure the quality, efficiency, risk and safety of your agents. For example, intent resolution, tool call accuracy, and task adherence evaluators are targeted to assess the performance of agent workflow, while content safety evaluator checks for inappropriate content in the responses such as violence or hate.
+For developers who want to run the application locally or customize the agent:
 
- In this template, we show how these evaluations can be performed during different phases of your development cycle.
+- **[Local Development Guide](./docs/local_development.md)** - Set up a local development environment, customize the frontend (starting with AgentPreview.tsx), modify agent instructions and tools, and use evaluation to improve your code.
 
-- **Local development**: You can use this [local evaluation script](evals/evaluate.py) to get performance and evaluation metrics based on a set of [test queries](evals/eval-queries.json) for a sample set of built-in evaluators.
-
-  The script reads the following environment variables:
-  - `AZURE_EXISTING_AIPROJECT_ENDPOINT`: AI Project endpoint
-  - `AZURE_EXISTING_AGENT_ID`: AI Agent Id, with fallback logic to look up agent Id by name `AZURE_AI_AGENT_NAME`
-  - `AZURE_AI_AGENT_DEPLOYMENT_NAME`: Deployment model used by the AI-assisted evaluators, with fallback logic to your agent model
-  
-  To install required packages and run the script:  
-
-  ```shell
-  python -m pip install -r src/requirements.txt
-  python -m pip install azure-ai-evaluation
-
-  python evals/evaluate.py
-  ```
-
-- **Monitoring**: When tracing is enabled, the [application code](src/api/routes.py) sends an asynchronous evaluation request after processing a thread run, allowing continuous monitoring of your agent. You can view results from the AI Foundry Tracing tab.
-    ![Tracing](docs/images/tracing_eval_screenshot.png)
-    Alternatively, you can go to your Application Insights logs for an interactive experience. Here is an example query to see logs on thread runs and related events.
-
-    ```kql
-    let thread_run_events = traces
-    | extend thread_run_id = tostring(customDimensions.["gen_ai.thread.run.id"]);
-    dependencies 
-    | extend thread_run_id = tostring(customDimensions.["gen_ai.thread.run.id"])
-    | join kind=leftouter thread_run_events on thread_run_id
-    | where isnotempty(thread_run_id)
-    | project timestamp, thread_run_id, name, success, duration, event_message = message, event_dimensions=customDimensions1
-   ```
-
-- **Continuous Integration**: You can try the [AI Agent Evaluation GitHub action](https://github.com/microsoft/ai-agent-evals) using the [sample GitHub workflow](.github/workflows/ai-evaluation.yaml) in your CI/CD pipeline. This GitHub action runs a set of queries against your agent, performs evaluations with evaluators of your choice, and produce a summary report. It also supports a comparison mode with statistical test, allowing you to iterate agent changes on your production environment with confidence. See [documentation](https://github.com/microsoft/ai-agent-evals) for more details.
-
+This guide covers:
+- Environment setup and prerequisites
+- Running the development server locally
+- Frontend customization and backend communication
+- Agent instructions and tools modification
+- File management and agent recreation
+- Using agent evaluation for code improvement
 
 ## Other Features
 Once you have the agents and the web app working, you are encouraged to try one of the following:
@@ -189,30 +162,8 @@ This template creates everything you need to get started with Azure AI Foundry:
 
 ## Troubleshooting
 
-### Provisioning and Deployment Failures
+For solutions to common deployment, container app, and agent issues, see the [Troubleshooting Guide](./docs/troubleshooting.md).
 
-- If you have an issue is with timeouts or provisioning resources, changing the location of your resource group can help, as there may be availability constrains for resources. Call `azd down` and remove your current resources, and delete the `.azure` folder from your workspace. Then, call `azd up` again and select a different region.
-
-- You may debug further using [azd commands](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference#azd-deploy). `azd show` displays information abour your app and resources, and `azd deploy --debug` enables debugging and logging while deploying the application's code to Azure.
-- Ensure that your az and azd tools are up to date.
-- After fully deploying with azd, additional errors in the Azure Portal may indicate that your latest code has not been successfully deployed
-
-### Azure Container Apps
-
-- If your ACA does not boot up, it is possible that your deployment has failed. This could be due to quota constraints, permission issues, or resource availability. Check failures in the deployment and container app logs in the Azure Portal.
-
-- Console traces in ACA can be found in the Azure Portal, but they may be unreliable. Use Python’s logging with INFO level, and adjust Azure HTTP logging to WARNING.
-- Once your ACA is deployed, utilize the browser debugger (F12) and clear cache (CTRL+SHIFT+R). This can help debug the frontend for better traceability.
-
-#### Agents
-
-- If your agent is occasionally unresponsive, your model may have reached its rate limit. You can increase its quota by adjusting the bicep configuration or by editing the model in the Azure AI Foundry page for your project's model deployments.
-
-- If your agent is crashing, confirm that you are using a model that you have deployed to your project.
-- This application is designed to serve multiple users on multiple browsers. This application uses cookies to ensure that the same thread is reused for conversations across multiple tabs in the same browser. If the browser is restarted, the old thread will continue to serve the user. However, if the application has a new agent after a server restart or a thread is deleted, a new thread will be created without requiring a browser refresh or signaling to the users. When users submit a message to the web server, the web server will create an agent, thread, and stream back a reply. The response contains `agent_id` and `thread_id` in cookies. As a result, each subsequent message sent to the web server will also contain these IDs. As long as the same agent is being used in the system and the thread can be retrieved in the cookie, the same thread will be used to serve the users.
-- For document handling, use filename-based downloads to avoid storing files in dictionaries.
-- Intermittent errors may arise when retrieving filenames for file IDs, which may be mitigated by using a single worker and fresh threads for each new agent.
-- File citation can be enhanced by automatically including filenames to reduce manual steps.
 
 ## Disclaimers
 
