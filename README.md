@@ -37,14 +37,12 @@ The solution supports deployment through GitHub Codespaces, VS Code Dev Containe
 - **Agent Evaluation**<br/>
 This solution demonstrates how you can evaluate your agent's performance and quality during local development and incorporate it into monitoring and CI/CD workflow.
 
-- **AI Red Teaming Agent**<br/>
-Facilitates the creation of an AI Red Teaming Agent that can run batch automated scans for safety and security scans on your Agent solution to check your risk posture before deploying it into production.
 
 <br/>
 
 Here is a screenshot showing the chatting web application with requests and responses between the system and the user:
 
-![Screenshot of chatting web application showing requests and responses between agent and the user.](docs/images/webapp_screenshot.png)
+![Screenshot of chatting web application showing requests and responses between agent and the user.](docs/images/agent screenshot.jpg)
 
 ## Getting Started
 
