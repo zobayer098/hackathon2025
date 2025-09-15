@@ -42,7 +42,7 @@ This solution demonstrates how you can evaluate your agent's performance and qua
 
 Here is a screenshot showing the chatting web application with requests and responses between the system and the user:
 
-![Screenshot of chatting web application showing requests and responses between agent and the user.] https://vscode.dev/github/zobayer098/hackathon2025/blob/hackathon2025work/docs/images/agent%20screenshot.jpg
+![Screenshot of chatting web application showing requests and responses between agent and the user.](<docs/images/agent screenshot.jpg>) 
 
 ## Getting Started
 
