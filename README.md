@@ -2,13 +2,13 @@
 
 Personalized AI mentor designed to streamline learning and certification for cloud and AI professionals. By curating tailored content, tracking progress, simulating exam scenarios, and recommending next steps based on individual roles and goals, it addresses the challenges of fragmented resources and unclear certification paths.
 
-The agent leverages the Azure AI Agent service and utilizes file search for knowledge retrieval from uploaded files using GPT, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.
+The agent leverages the Azure AI Agent service and utilizes file search for knowledge retrieval from uploaded files using GPT Model, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.
 
 ## Solution Overview
 
 This solution deploys a web-based chat application with an AI agent running in Azure Container App.
 
-The agent leverages the Azure AI Agent service and utilizes Azure AI Search for knowledge retrieval from uploaded files, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.
+The agent leverages the Azure AI Agent service and utilizes Azure AI Search for knowledge retrieval from uploaded files using GPT Model, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.
 
 This solution creates an Azure AI Foundry project and Azure AI services. More details about the resources can be found in the [resources](#resources) documentation. There are options to enable logging, tracing, and monitoring.
 
