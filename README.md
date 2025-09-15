@@ -2,7 +2,7 @@
 
 Personalized AI mentor designed to streamline learning and certification for cloud and AI professionals. By curating tailored content, tracking progress, simulating exam scenarios, and recommending next steps based on individual roles and goals, it addresses the challenges of fragmented resources and unclear certification paths.
 
-The agent leverages the Azure AI Agent service and utilizes file search for knowledge retrieval from uploaded files, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.
+The agent leverages the Azure AI Agent service and utilizes file search for knowledge retrieval from uploaded files using GPT, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.
 
 ## Solution Overview
 
